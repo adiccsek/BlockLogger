@@ -3,6 +3,7 @@ package hu.shiya.blockLogger.listeners;
 import hu.shiya.blockLogger.BlockLogger;
 import hu.shiya.blockLogger.Data;
 import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -33,14 +34,8 @@ public class BlockListeners implements Listener {
         Data savedDatas = new Data(player, block, location, time, type);
         int key = generateKey();
 
-        pluginInstance.getConfig().set("logs." + key + ".type", savedDatas.Type);
-        pluginInstance.getConfig().set("logs." + key + ".playername", savedDatas.PlayerName);
-        pluginInstance.getConfig().set("logs." + key + ".block", savedDatas.Block);
-        pluginInstance.getConfig().set("logs."  + key + ".location.world", savedDatas.Location.getWorld().getName());
-        pluginInstance.getConfig().set("logs."  + key + ".location.x", savedDatas.Location.getBlockX());
-        pluginInstance.getConfig().set("logs."  + key + ".location.y", savedDatas.Location.getBlockY());
-        pluginInstance.getConfig().set("logs."  + key + ".location.z", savedDatas.Location.getBlockZ());
-        pluginInstance.getConfig().set("logs."  + key + ".time", savedDatas.Time);
+        ConfigurationSection conf = pluginInstance.getConfig().createSection("logs." + key);
+        savedDatas.save(conf);
         pluginInstance.saveConfig();
     }
 }
