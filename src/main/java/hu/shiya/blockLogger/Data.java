@@ -1,17 +1,17 @@
 package hu.shiya.blockLogger;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
 
 public class Data {
     // private final BlockLogger pluginInstance;
-
+    private String type;
     private String playerName;
     private String block;
     private Location location;
     private long time;
-    private String type;
     public Data(String playerName, String block, Location location, long time, String type) { //BlockLogger pluginInstance
         this.playerName = playerName;
         this.block = block;
@@ -44,6 +44,15 @@ public class Data {
         conf.set(".location.x", this.getLocation().getBlockX());
         conf.set(".location.y", this.getLocation().getBlockY());
         conf.set(".location.z", this.getLocation().getBlockZ());
-        conf.set(".time", this.getTime());
+        conf.set(".time", this.getTime() / 60000);
+    }
+
+    public void load(ConfigurationSection conf) {
+       this.type = conf.getString("type");
+       this.playerName = conf.getString("playername");
+       this.block = conf.getString("block"); //enumof
+       World bukkitWorld = Bukkit.getWorld(conf.getString("location.world"));
+       this.location = new Location(bukkitWorld, conf.getInt("location.x"), conf.getInt("location.y"), conf.getInt("location.z"));
+       this.time = conf.getLong("time");
     }
 }
