@@ -1,3 +1,4 @@
 hu\shiya\blockLogger\Data.class
 hu\shiya\blockLogger\BlockLogger.class
+hu\shiya\blockLogger\commands\RollBack.class
 hu\shiya\blockLogger\listeners\BlockListeners.class

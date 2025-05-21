@@ -4,3 +4,7 @@ main: hu.shiya.blockLogger.BlockLogger
 api-version: '1.21'
 authors: [ Shiya ]
 description: A Plugin that welcomes a newly joined player
+commands:
+  rollback:
+    description: Rollback a player's block actions.
+    usage: /rollback <name> <minutes>
