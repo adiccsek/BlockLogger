@@ -1,6 +1,7 @@
 package hu.shiya.blockLogger.commands;
 
 import hu.shiya.blockLogger.BlockLogger;
+import hu.shiya.blockLogger.Data;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -11,14 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class LocateCommand implements CommandExecutor {
     int radius;
-    String playerName;
-    String blockType;
-    String type;
-    int x;
-    int y;
-    int z;
-
-
+        
     private final BlockLogger pluginInstance;
     public LocateCommand( final BlockLogger plugin ) {
         this.pluginInstance = plugin;
@@ -30,10 +24,6 @@ public class LocateCommand implements CommandExecutor {
             commandSender.sendMessage("Please use one argument (int)");
             return true;
         }
-        //locate 5
-        // shiya_ break GrassBlock Location
-        // Phoenix place Oak_Wood Location
-
         if (commandSender instanceof Player player) {
             Location currentLocation = player.getLocation();
             ConfigurationSection conf = pluginInstance.getConfig().getConfigurationSection( "logs" );
@@ -42,22 +32,18 @@ public class LocateCommand implements CommandExecutor {
                 return true;
             }
             try {
-
                 radius = Integer.parseInt(args[0]);
                 for (String key : conf.getKeys(false)) {
                     ConfigurationSection section = conf.getConfigurationSection(key);
-                    x = section.getInt("location.x");
-                    y = section.getInt("location.y");
-                    z = section.getInt("location.z");
-                    playerName = section.getString("playername");
-                    blockType = section.getString("block");
-                    type = section.getString("type");
+                    Data data = new Data();
+                    data.load( section );
 
-                    if (currentLocation.getX() - radius <= x && currentLocation.getX() + radius >= x &&
-                            currentLocation.getY() - radius <= y && currentLocation.getY() + radius >= y &&
-                            currentLocation.getZ() - radius <= z && currentLocation.getZ() + radius >= z )
+                    if (currentLocation.getX() - radius <= data.getLocation().getX() && currentLocation.getX() + radius >= data.getLocation().getX() &&
+                            currentLocation.getY() - radius <= data.getLocation().getY() && currentLocation.getY() + data.getLocation().getY() >= data.getLocation().getY() &&
+                            currentLocation.getZ() - radius <= data.getLocation().getZ() && currentLocation.getZ() + radius >= data.getLocation().getZ() )
                     {
-                        player.sendMessage(playerName + " " + type + " at " + x + ", " + y + ", " + z + ", " + blockType);
+                        player.sendMessage(data.getPlayerName() + " " + data.getType() + " at " + data.getLocation().getX() + ", " + data.getLocation().getY() + ", " + data.getLocation().getBlockZ() + ", " + data
+                                .getBlock());
                     } else {
                         player.sendMessage("No data was found with this range!");
                         return true;
