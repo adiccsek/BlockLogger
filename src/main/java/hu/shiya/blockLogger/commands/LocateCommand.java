@@ -10,9 +10,10 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LocateCommand implements CommandExecutor {
-    int radius;
-        
     private final BlockLogger pluginInstance;
     public LocateCommand( final BlockLogger plugin ) {
         this.pluginInstance = plugin;
@@ -20,6 +21,9 @@ public class LocateCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
+        int radius;
+        //String checkPlayer;
+        List<String> output = new ArrayList<String>();
         if (args.length != 1) {
             commandSender.sendMessage("Please use one argument (int)");
             return true;
@@ -33,24 +37,41 @@ public class LocateCommand implements CommandExecutor {
             }
             try {
                 radius = Integer.parseInt(args[0]);
+                //checkPlayer = args[1];
                 for (String key : conf.getKeys(false)) {
                     ConfigurationSection section = conf.getConfigurationSection(key);
                     Data data = new Data();
                     data.load( section );
 
-                    if (currentLocation.getX() - radius <= data.getLocation().getX() && currentLocation.getX() + radius >= data.getLocation().getX() &&
-                            currentLocation.getY() - radius <= data.getLocation().getY() && currentLocation.getY() + data.getLocation().getY() >= data.getLocation().getY() &&
-                            currentLocation.getZ() - radius <= data.getLocation().getZ() && currentLocation.getZ() + radius >= data.getLocation().getZ() )
+                    int px = currentLocation.getBlockX();
+                    int py = currentLocation.getBlockY();
+                    int pz = currentLocation.getBlockZ();
+
+                    int dx = data.getLocation().getBlockX();
+                    int dy = data.getLocation().getBlockY();
+                    int dz = data.getLocation().getBlockZ();
+
+                    if (px - radius <= dx && px + radius >= dx &&
+                            py - radius <= dy && py + radius >= dy &&
+                            pz - radius <= dz && pz + radius >= dz )
                     {
-                        player.sendMessage(data.getPlayerName() + " " + data.getType() + " at " + data.getLocation().getX() + ", " + data.getLocation().getY() + ", " + data.getLocation().getBlockZ() + ", " + data
-                                .getBlock());
-                    } else {
-                        player.sendMessage("No data was found with this range!");
-                        return true;
+                        output.add(String.format("%s %s at (%d, %d, %d) : %s",
+                                data.getPlayerName(),
+                                data.getType(),
+                                data.getLocation().getBlockX(),
+                                data.getLocation().getBlockY(),
+                                data.getLocation().getBlockZ(),
+                                data.getBlock()));
                     }
                 }
             } catch ( final NumberFormatException e ) {
-                player.sendMessage("Only Numbers are accepted as arguments");
+                player.sendMessage( e.getMessage() );
+            }
+            if (!output.isEmpty()) {
+                for (String text : output) {
+                    player.sendMessage( text );
+                }} else {
+                player.sendMessage( "no log-data was found with this argument!" );
             }
         }
         return true;
