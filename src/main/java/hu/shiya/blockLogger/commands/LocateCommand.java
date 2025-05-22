@@ -22,10 +22,10 @@ public class LocateCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
         int radius;
-        //String checkPlayer;
+        String checkPlayer;
         List<String> output = new ArrayList<String>();
-        if (args.length != 1) {
-            commandSender.sendMessage("Please use one argument (int)");
+        if (args.length > 2 || args.length == 0) {
+            commandSender.sendMessage("Please use a correct number of arguments");
             return true;
         }
         if (commandSender instanceof Player player) {
@@ -37,32 +37,23 @@ public class LocateCommand implements CommandExecutor {
             }
             try {
                 radius = Integer.parseInt(args[0]);
-                //checkPlayer = args[1];
                 for (String key : conf.getKeys(false)) {
                     ConfigurationSection section = conf.getConfigurationSection(key);
                     Data data = new Data();
                     data.load( section );
 
-                    int px = currentLocation.getBlockX();
-                    int py = currentLocation.getBlockY();
-                    int pz = currentLocation.getBlockZ();
-
-                    int dx = data.getLocation().getBlockX();
-                    int dy = data.getLocation().getBlockY();
-                    int dz = data.getLocation().getBlockZ();
-
-                    if (px - radius <= dx && px + radius >= dx &&
-                            py - radius <= dy && py + radius >= dy &&
-                            pz - radius <= dz && pz + radius >= dz )
-                    {
-                        output.add(String.format("%s %s at (%d, %d, %d) : %s",
-                                data.getPlayerName(),
-                                data.getType(),
-                                data.getLocation().getBlockX(),
-                                data.getLocation().getBlockY(),
-                                data.getLocation().getBlockZ(),
-                                data.getBlock()));
-                    }
+                    boolean withinRadius = isWithinRadius(currentLocation, data, radius);
+                    boolean matchesPlayer = args.length == 2 && data.getPlayerName().equals(args[1]);
+                        if ( withinRadius && ( args.length == 1 || matchesPlayer))
+                        {
+                            output.add(String.format("%s %s at (%d, %d, %d) : %s",
+                                    data.getPlayerName(),
+                                    data.getType(),
+                                    data.getLocation().getBlockX(),
+                                    data.getLocation().getBlockY(),
+                                    data.getLocation().getBlockZ(),
+                                    data.getBlock()));
+                        }
                 }
             } catch ( final NumberFormatException e ) {
                 player.sendMessage( e.getMessage() );
@@ -75,5 +66,20 @@ public class LocateCommand implements CommandExecutor {
             }
         }
         return true;
+    }
+
+    private static boolean isWithinRadius(Location currentLocation, Data data, int radius) {
+        int px = currentLocation.getBlockX();
+        int py = currentLocation.getBlockY();
+        int pz = currentLocation.getBlockZ();
+
+        int dx = data.getLocation().getBlockX();
+        int dy = data.getLocation().getBlockY();
+        int dz = data.getLocation().getBlockZ();
+        boolean withinRadius =
+                px - radius <= dx && px + radius >= dx &&
+                py - radius <= dy && py + radius >= dy &&
+                pz - radius <= dz && pz + radius >= dz;
+        return withinRadius;
     }
 }
