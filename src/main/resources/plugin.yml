@@ -8,3 +8,6 @@ commands:
   rollback:
     description: Rollback a player's block actions.
     usage: /rollback <name> <minutes>
+  locate:
+    description: Locate block events in a specific radius
+    usage: /locate <amount>

@@ -54,17 +54,13 @@ public class RollBack implements CommandExecutor {
                 ConfigurationSection section = conf.getConfigurationSection(key);
                 long time = section.getLong("time");
                 String playerName = section.getString("playername");
-                String type = section.getString("type");
-                String block = section.getString("block");
-                Location location = deserializeLocation(section.getConfigurationSection("location"));
 
                 if ( time > checkTime ) {
-
                     if (!playerName.equals(player.getName())) {
                         player.sendMessage("The name does not match!");
                         return true;
                     }
-                    Data actionData = new Data(playerName, block, location, time, type);
+                    Data actionData = new Data();
                     actionData.load(section);
                      if ("break".equals(actionData.getType())) {
                          actionData.getLocation().getBlock().setType(Material.valueOf(actionData.getBlock()));

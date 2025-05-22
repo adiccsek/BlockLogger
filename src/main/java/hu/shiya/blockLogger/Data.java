@@ -20,6 +20,9 @@ public class Data {
         this.type = type;
         //this.pluginInstance = pluginInstance;
     }
+    public Data( ) {
+
+    }
     public String getPlayerName() {
         return playerName;
     }
