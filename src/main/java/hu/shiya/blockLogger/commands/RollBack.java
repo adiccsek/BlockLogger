@@ -2,10 +2,7 @@ package hu.shiya.blockLogger.commands;
 
 import hu.shiya.blockLogger.BlockLogger;
 import hu.shiya.blockLogger.Data;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -14,9 +11,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 public class RollBack implements CommandExecutor {
-    String targetPlayer;
-    long getTime;
-    long currentTime;
+
 
 
     private final BlockLogger pluginInstance;
@@ -35,10 +30,19 @@ public class RollBack implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
-        if (args.length != 2 ) {
+        if (!commandSender.hasPermission("rollback-command")) {
+            commandSender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
             return true;
         }
-        if ( commandSender instanceof Player player ) { //check for permission later
+
+        String targetPlayer;
+        long getTime;
+        long currentTime;
+
+        if (args.length != 2) {
+            return true;
+        }
+        if ( commandSender instanceof Player player ) {
             try {
                 targetPlayer = args[0];
                 getTime = Long.parseLong(args[1]);
@@ -56,7 +60,7 @@ public class RollBack implements CommandExecutor {
                 String playerName = section.getString("playername");
 
                 if ( time > checkTime ) {
-                    if (!playerName.equals(player.getName())) {
+                    if (!playerName.equals(targetPlayer)) {
                         player.sendMessage("The name does not match!");
                         return true;
                     }

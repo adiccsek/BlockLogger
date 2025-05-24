@@ -2,6 +2,7 @@ package hu.shiya.blockLogger.commands;
 
 import hu.shiya.blockLogger.BlockLogger;
 import hu.shiya.blockLogger.Data;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -21,8 +22,13 @@ public class LocateCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
+        if (!commandSender.hasPermission("locate-command")) {
+            commandSender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            return true;
+        }
+
         int radius;
-        String checkPlayer;
+
         List<String> output = new ArrayList<String>();
         if (args.length > 2 || args.length == 0) {
             commandSender.sendMessage("Please use a correct number of arguments");
