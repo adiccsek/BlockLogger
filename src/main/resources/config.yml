@@ -1,0 +1,11 @@
+messages:
+  rollback:
+    no-permission-error: "You do not have permission to use /rollback %player%."
+    arguments-error: "Please use a correct number of arguments"
+    usage-error: "The correct usage is: /rollback <name> <time>"
+    name-error: "The name does not match!"
+  locate:
+    no-permission-error: "You do not have permission to use /locate %player%."
+    arguments-error: "Please use a correct number of arguments"
+    data-error: "No log data was found."
+    locate-correct: "%player% %type% %block% at (%x%, %y%, %z%)"

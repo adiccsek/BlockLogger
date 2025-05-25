@@ -9,11 +9,13 @@ public final class BlockLogger extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+        getConfig().options().copyDefaults(true);
+        saveConfig();
 
         getServer().getPluginManager().registerEvents(new BlockListeners( this ), this);
         this.getCommand("rollback").setExecutor( new RollBack( this ) );
         this.getCommand("locate").setExecutor( new LocateCommand( this ) );
-        saveDefaultConfig();
     }
 
     @Override

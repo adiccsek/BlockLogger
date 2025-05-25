@@ -2,6 +2,7 @@ package hu.shiya.blockLogger.commands;
 
 import hu.shiya.blockLogger.BlockLogger;
 import hu.shiya.blockLogger.Data;
+import hu.shiya.blockLogger.Placeholder;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class LocateCommand implements CommandExecutor {
@@ -22,27 +24,40 @@ public class LocateCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
+
+
+
+        List<String> output = new ArrayList<String>();
         if (!commandSender.hasPermission("locate-command")) {
-            commandSender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            HashMap<String, String> placeholders = new HashMap<>();
+            placeholders.put("player" , commandSender.getName());
+
+            String rawMessage = pluginInstance.getConfig().getString("messages.locate.no-permission-error");
+            commandSender.sendMessage(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
             return true;
         }
 
-        int radius;
 
-        List<String> output = new ArrayList<String>();
         if (args.length > 2 || args.length == 0) {
-            commandSender.sendMessage("Please use a correct number of arguments");
+            String message = pluginInstance.getConfig().getString("messages.locate.arguments-error");
+            commandSender.sendMessage(message);
             return true;
         }
         if (commandSender instanceof Player player) {
             Location currentLocation = player.getLocation();
             ConfigurationSection conf = pluginInstance.getConfig().getConfigurationSection( "logs" );
             if (conf == null) {
-                player.sendMessage(" no log data found ");
+                String message = pluginInstance.getConfig().getString("messages.locate.data-error");
+                player.sendMessage(message);
                 return true;
             }
-            try {
-                radius = Integer.parseInt(args[0]);
+                int radius = Integer.MIN_VALUE;
+                try { radius = Integer.parseInt(args[0]); }
+                catch (Exception e) {
+                    player.sendMessage("Ez nem egy szám!");
+                    return true;
+                };
+
                 for (String key : conf.getKeys(false)) {
                     ConfigurationSection section = conf.getConfigurationSection(key);
                     Data data = new Data();
@@ -52,23 +67,33 @@ public class LocateCommand implements CommandExecutor {
                     boolean matchesPlayer = args.length == 2 && data.getPlayerName().equals(args[1]);
                         if ( withinRadius && ( args.length == 1 || matchesPlayer))
                         {
-                            output.add(String.format("%s %s at (%d, %d, %d) : %s",
-                                    data.getPlayerName(),
-                                    data.getType(),
-                                    data.getLocation().getBlockX(),
-                                    data.getLocation().getBlockY(),
-                                    data.getLocation().getBlockZ(),
-                                    data.getBlock()));
+                            HashMap<String, String> placeholders = new HashMap<>();
+                            String rawMessage = pluginInstance.getConfig().getString("messages.locate.locate-correct");
+
+                            placeholders.put("player" , player.getName());
+                            placeholders.put("type", data.getType());
+                            placeholders.put("block", String.valueOf(data.getBlock()));
+                            placeholders.put("x", String.valueOf(data.getLocation().getBlockX()));
+                            placeholders.put("y", String.valueOf(data.getLocation().getBlockY()));
+                            placeholders.put("z", String.valueOf(data.getLocation().getBlockZ()));
+                            output.add(Placeholder.placeholder(rawMessage, placeholders));
+//                            output.add(String.format("%s %s at (%d, %d, %d) : %s",
+//                                    data.getPlayerName(),
+//                                    data.getType(),
+//                                    data.getLocation().getBlockX(),
+//                                    data.getLocation().getBlockY(),
+//                                    data.getLocation().getBlockZ(),
+//                                    data.getBlock()));
                         }
                 }
-            } catch ( final NumberFormatException e ) {
-                player.sendMessage( e.getMessage() );
-            }
+
             if (!output.isEmpty()) {
                 for (String text : output) {
                     player.sendMessage( text );
                 }} else {
-                player.sendMessage( "no log-data was found with this argument!" );
+                String message = pluginInstance.getConfig().getString("messages.locate.data-error");
+                player.sendMessage(message);
+                return true;
             }
         }
         return true;

@@ -11,3 +11,8 @@ commands:
   locate:
     description: Locate block events in a specific radius
     usage: /locate <amount>
+permissions:
+  locate-command:
+    description: Allows the player to use the /locate <amount> <player> command
+  rollback-command:
+    description: Allows the player to use the /rollback < command
