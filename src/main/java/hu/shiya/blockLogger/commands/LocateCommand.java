@@ -3,6 +3,7 @@ package hu.shiya.blockLogger.commands;
 import hu.shiya.blockLogger.BlockLogger;
 import hu.shiya.blockLogger.Data;
 import hu.shiya.blockLogger.Placeholder;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -10,11 +11,15 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class LocateCommand implements CommandExecutor {
     private final BlockLogger pluginInstance;
@@ -76,14 +81,41 @@ public class LocateCommand implements CommandExecutor {
                             placeholders.put("x", String.valueOf(data.getLocation().getBlockX()));
                             placeholders.put("y", String.valueOf(data.getLocation().getBlockY()));
                             placeholders.put("z", String.valueOf(data.getLocation().getBlockZ()));
+
+                            TextDisplay hologram = data.getLocation().getWorld().spawn(data.getLocation(),TextDisplay.class);
+
+                            hologram.setText(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
+                            hologram.setDefaultBackground(false);
+                            hologram.setAlignment(TextDisplay.TextAlignment.CENTER);
+                            hologram.setSeeThrough(true);
+                            hologram.setShadowed(false);
+                            hologram.setLineWidth(150);
+
+
+                            AtomicInteger taskId = new AtomicInteger();
+
+                            taskId.set(Bukkit.getScheduler().scheduleSyncRepeatingTask(pluginInstance, () -> {
+                                if (!hologram.isValid()) {
+                                    Bukkit.getScheduler().cancelTask(taskId.get());
+                                    return;
+                                }
+
+                                hologram.teleport(data.getLocation());
+
+                                Location holoLoc = hologram.getLocation();
+                                Vector direction = player.getLocation().toVector()
+                                        .subtract(holoLoc.toVector());
+                                holoLoc.setDirection(direction);
+                                hologram.teleport(holoLoc);
+                            }, 0L, 1L));
+
+
+                            Bukkit.getScheduler().runTaskLater(pluginInstance, () -> {
+                                if (hologram.isValid()) hologram.remove();
+                                Bukkit.getScheduler().cancelTask(taskId.get());
+                            }, 6 * 20L);
+
                             output.add(Placeholder.placeholder(rawMessage, placeholders));
-//                            output.add(String.format("%s %s at (%d, %d, %d) : %s",
-//                                    data.getPlayerName(),
-//                                    data.getType(),
-//                                    data.getLocation().getBlockX(),
-//                                    data.getLocation().getBlockY(),
-//                                    data.getLocation().getBlockZ(),
-//                                    data.getBlock()));
                         }
                 }
 

@@ -19,6 +19,7 @@ public class Data {
         this.type = type;
     }
     public Data( ) { }
+
     public String getPlayerName() {
         return playerName;
     }
