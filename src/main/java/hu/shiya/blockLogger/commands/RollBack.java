@@ -1,33 +1,28 @@
 package hu.shiya.blockLogger.commands;
 
-import hu.shiya.blockLogger.BlockLogger;
-import hu.shiya.blockLogger.Data;
-import hu.shiya.blockLogger.Placeholder;
+import hu.shiya.blockLogger.services.BlockLogger;
+import hu.shiya.blockLogger.services.Data;
+import hu.shiya.blockLogger.services.Placeholder;
+import hu.shiya.blockLogger.services.SQL;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RollBack implements CommandExecutor {
     private final BlockLogger pluginInstance;
-    public RollBack( final BlockLogger pluginInstance ) {
+    private final SQL sqlInstance;
+
+    public RollBack( final BlockLogger pluginInstance , final SQL sqlInstance ) {
         this.pluginInstance = pluginInstance;
+        this.sqlInstance = sqlInstance;
     }
 
-    public Location deserializeLocation(ConfigurationSection locSection) {
-        if (locSection == null) return null;
-        World world = Bukkit.getWorld(locSection.getString("world"));
-        double x = locSection.getDouble("x");
-        double y = locSection.getDouble("y");
-        double z = locSection.getDouble("z");
-        return new Location(world, x, y, z);
-    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
@@ -35,9 +30,10 @@ public class RollBack implements CommandExecutor {
         long getTime;
         long currentTime;
 
+
         if (!commandSender.hasPermission("rollback-command")) {
             HashMap<String, String> placeholders = new HashMap<>();
-            placeholders.put("player" , commandSender.getName());
+            placeholders.put("player", commandSender.getName());
 
             String rawMessage = pluginInstance.getConfig().getString("messages.rollback.no-permission-error");
             commandSender.sendMessage(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
@@ -49,39 +45,42 @@ public class RollBack implements CommandExecutor {
             return true;
         }
 
-        if ( commandSender instanceof Player player ) {
+        if (commandSender instanceof Player player) {
             try {
                 targetPlayer = args[0];
                 getTime = Long.parseLong(args[1]);
 
-            } catch ( Exception e ) {
+            } catch (Exception e) {
                 String message = pluginInstance.getConfig().getString("messages.rollback.usage-error");
                 player.sendMessage(message);
                 return true;
             }
             currentTime = System.currentTimeMillis() / 60000;
             long checkTime = currentTime - getTime;
-            ConfigurationSection conf = pluginInstance.getConfig().getConfigurationSection( "logs" );
-            for (String key : conf.getKeys(false)) {
-                ConfigurationSection section = conf.getConfigurationSection(key);
-                long time = section.getLong("time");
-                String playerName = section.getString("playername");
 
-                if ( time > checkTime ) {
-                    if (!playerName.equals(targetPlayer)) {
-                        String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
-                        player.sendMessage(message);
-                        return true;
+            Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> { //MÉG NEM JÓ
+                int length = sqlInstance.getLengthOfDatabaseAsync();
+
+                for (int i = 0; i < length; i++) {
+                    Data data = new Data();
+                    data = sqlInstance.getLoggedBlocksAsync();
+                    long time = data.getTime();
+                    String playerName = data.getPlayerName();
+
+                    if (time > checkTime) {
+                        if (!playerName.equals(targetPlayer)) {
+                            String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
+                            player.sendMessage(message);
+                        }
+                        if ("break".equals(data.getType())) {
+                            data.getLocation().getBlock().setType(Material.valueOf(data.getBlock()));
+                        } else {
+                            data.getLocation().getBlock().setType(Material.AIR);
+                        }
                     }
-                    Data actionData = new Data();
-                    actionData.load(section);
-                     if ("break".equals(actionData.getType())) {
-                         actionData.getLocation().getBlock().setType(Material.valueOf(actionData.getBlock()));
-                     } else {
-                         actionData.getLocation().getBlock().setType(Material.AIR);
-                     }
                 }
-            }
+            });
+            return true;
         }
         return true;
     }

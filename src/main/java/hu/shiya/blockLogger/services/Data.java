@@ -1,4 +1,4 @@
-package hu.shiya.blockLogger;
+package hu.shiya.blockLogger.services;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -35,6 +35,32 @@ public class Data {
     public String getType() {
         return type;
     }
+
+    public void setType( String type ) {
+        this.type = type;
+    }
+    public void setPlayerName( String playerName ) {
+        this.playerName = playerName;
+    }
+    public void setBlock( String block ) {
+        this.block = block;
+    }
+    public void setLocation( Location location ) {
+        this.location = location;
+    }
+    public void setTime( long time ) {
+        this.time = time;
+    }
+
+
+    public Location createLocationSync(Data data) {
+        World world = data.getLocation().getWorld();
+        double x = data.getLocation().getX();
+        double y = data.getLocation().getY();
+        double z = data.getLocation().getZ();
+        return new Location(world, x, y, z);
+    }
+
 
     public void save(ConfigurationSection conf) {
         conf.set(".type", this.getType());

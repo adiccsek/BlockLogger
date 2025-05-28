@@ -1,8 +1,9 @@
 package hu.shiya.blockLogger.commands;
 
-import hu.shiya.blockLogger.BlockLogger;
-import hu.shiya.blockLogger.Data;
-import hu.shiya.blockLogger.Placeholder;
+import hu.shiya.blockLogger.services.BlockLogger;
+import hu.shiya.blockLogger.services.Data;
+import hu.shiya.blockLogger.services.Placeholder;
+import hu.shiya.blockLogger.services.SQL;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -23,8 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LocateCommand implements CommandExecutor {
     private final BlockLogger pluginInstance;
-    public LocateCommand( final BlockLogger plugin ) {
+    private final SQL sqlInstance;
+    public LocateCommand( final BlockLogger plugin , final SQL sqlInstance ) {
         this.pluginInstance = plugin;
+        this.sqlInstance = sqlInstance;
     }
 
     @Override
@@ -63,10 +66,10 @@ public class LocateCommand implements CommandExecutor {
                     return true;
                 };
 
-                for (String key : conf.getKeys(false)) {
-                    ConfigurationSection section = conf.getConfigurationSection(key);
+                for (int i = 0; i < sqlInstance.getLengthOfDatabaseAsync(); i++) { //MÉG NEM JÓ
+
                     Data data = new Data();
-                    data.load( section );
+                    sqlInstance.getLoggedBlocksAsync();
 
                     boolean withinRadius = isWithinRadius(currentLocation, data, radius);
                     boolean matchesPlayer = args.length == 2 && data.getPlayerName().equals(args[1]);
