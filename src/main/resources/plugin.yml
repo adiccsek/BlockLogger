@@ -15,4 +15,4 @@ permissions:
   locate-command:
     description: Allows the player to use the /locate <amount> <player> command
   rollback-command:
-    description: Allows the player to use the /rollback < command
+    description: Allows the player to use the /rollback <command>
