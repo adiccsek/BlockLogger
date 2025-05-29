@@ -4,11 +4,13 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 public class SQL {
     private final BlockLogger blockLogger;
     private Connection connection;
-    public SQL( final BlockLogger blockLogger ) {
+
+    public SQL(final BlockLogger blockLogger) {
         this.blockLogger = blockLogger;
     }
 
@@ -20,15 +22,15 @@ public class SQL {
 
             if (connection != null && !connection.isClosed()) {
                 String sql = "CREATE TABLE IF NOT EXISTS logged_blocks (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY" +
-                "type VARCHAR(50)" +
-                "playername VARCHAR(50)" +
-                "block VARCHAR(100)" +
-                "world VARCHAR(100)" +
-                "x DOUBLE" +
-                "y DOUBLE" +
-                "z DOUBLE" +
-                "time BIGINT)";
+                        "id INT AUTO_INCREMENT PRIMARY KEY," +
+                        "type VARCHAR(50)," +
+                        "playername VARCHAR(50)," +
+                        "block VARCHAR(100)," +
+                        "world VARCHAR(100)," +
+                        "x DOUBLE," +
+                        "y DOUBLE," +
+                        "z DOUBLE," +
+                        "time BIGINT)";
 
                 Statement statement = connection.createStatement();
                 statement.executeUpdate(sql);
@@ -50,10 +52,12 @@ public class SQL {
                 statement.setString(1, data.getType());
                 statement.setString(2, data.getPlayerName());
                 statement.setString(3, data.getBlock());
-                statement.setDouble(4, data.getLocation().getBlockX());
-                statement.setDouble(5, data.getLocation().getBlockY());
-                statement.setDouble(6, data.getLocation().getBlockZ());
-                statement.setLong(7, data.getTime());
+                statement.setString(4, data.getLocation().getWorld().getName());
+                statement.setDouble(5, data.getLocation().getBlockX());
+                statement.setDouble(6, data.getLocation().getBlockY());
+                statement.setDouble(7, data.getLocation().getBlockZ());
+                statement.setLong(8, data.getTime());
+
                 statement.executeUpdate();
                 blockLogger.getLogger().info("Added the elements successfully");
             }
@@ -62,47 +66,111 @@ public class SQL {
         }
     }
 
-    public Data getLoggedBlocksAsync() {
+    public ArrayList<Data> rollBackLogicAsync(long checkTime, String playerName) {
         try {
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
+                return null;
             } else {
-                String sql = "SELECT * FROM logged_blocks";
-                Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery(sql);
-                Data data = new Data();
+                ArrayList<Data> datas = new ArrayList<>();
+                String sql = "SELECT * FROM logged_blocks WHERE time > ? AND playername = ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setLong(1, checkTime);
+                statement.setString(2, playerName);
+                ResultSet resultSet = statement.executeQuery();
+
                 while (resultSet.next()) {
+                    Data data = new Data();
                     data.setType(resultSet.getString("type"));
                     data.setPlayerName(resultSet.getString("playername"));
                     data.setBlock(resultSet.getString("block"));
                     Location location = data.createLocationSync(data);
                     data.setLocation(location);
                     data.setTime(resultSet.getLong("time"));
+                    blockLogger.getLogger().info("Retrieved the elements successfully");
+                    datas.add(data);
                 }
-                blockLogger.getLogger().info("Retrieved the elements successfully");
-                return data;
-            }
-         } catch (SQLException e) {
-            blockLogger.getLogger().severe(e.getMessage());
-        }
-        return null;
-    }
-    public int getLengthOfDatabaseAsync() { //VALOSZINU NEM KELL MAJD MAS METHODUSOK WHERE FELTÉTELLEL KELLENEK NE KELLJEN AZ EGÉSZEN VÉGIGMENNI
-        try {
-            if (connection == null || connection.isClosed()) {
-                blockLogger.getLogger().severe("Connection is null or is closed");
-            } else {
-                String sql = "SELECT COUNT(*) FROM logged_blocks";
-                Statement statement = connection.createStatement();
-                ResultSet resultSet = statement.executeQuery(sql);
-                resultSet.next();
-                return resultSet.getInt(1);
+                return datas;
             }
 
         } catch (Exception e) {
             blockLogger.getLogger().severe(e.getMessage());
+            return null;
         }
-        return 0;
+    }
+
+    //OLYAN QUERY KELL AMI MEGEGYEZIK EGY PARAMETER NEVVEL ES WITHINRADIUS LESZ LOCATION PARAMETER, radius parameter
+    // database.query("SELECT * FROM log WHERE x>? AND x<? ...", playerX-10, playerX+10, ...);
+
+    public ArrayList<Data> locateLogicPlayerAsync(String playerName, Location location, int radius) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+                return null;
+            } else {
+                String sql = "SELECT * FROM logged_blocks WHERE playername = ? AND x>? AND x<? AND y>? AND y<? AND z>? AND z<?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, playerName);
+                statement.setDouble(2, location.getX() + radius);
+                statement.setDouble(3, location.getX() - radius);
+                statement.setDouble(4, location.getY() + radius);
+                statement.setDouble(5, location.getY() - radius);
+                statement.setDouble(6, location.getZ() + radius);
+                ResultSet resultSet = statement.executeQuery();
+                ArrayList<Data> datas = new ArrayList<>();
+                while (resultSet.next()) {
+                    Data data = new Data();
+                    data.setType(resultSet.getString("type"));
+                    data.setPlayerName(resultSet.getString("playername"));
+                    data.setBlock(resultSet.getString("block"));
+                    Location location2 = data.createLocationSync(data);
+                    data.setLocation(location2);
+                    data.setTime(resultSet.getLong("time"));
+                    blockLogger.getLogger().info("Retrieved the elements successfully");
+                    datas.add(data);
+                }
+                return datas;
+            }
+
+        } catch (Exception e) {
+            blockLogger.getLogger().severe(e.getMessage());
+            return null;
+        }
+    }
+
+    public ArrayList<Data> locateLogicAsync( Location location, int radius) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+                return null;
+            } else {
+                String sql = "SELECT * FROM logged_blocks WHERE x>? AND x<? AND y>? AND y<? AND z>? AND z<?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setDouble(2, location.getX() + radius);
+                statement.setDouble(3, location.getX() - radius);
+                statement.setDouble(4, location.getY() + radius);
+                statement.setDouble(5, location.getY() - radius);
+                statement.setDouble(6, location.getZ() + radius);
+                ResultSet resultSet = statement.executeQuery();
+                ArrayList<Data> datas = new ArrayList<>();
+                while (resultSet.next()) {
+                    Data data = new Data();
+                    data.setType(resultSet.getString("type"));
+                    data.setPlayerName(resultSet.getString("playername"));
+                    data.setBlock(resultSet.getString("block"));
+                    Location location2 = data.createLocationSync(data);
+                    data.setLocation(location2);
+                    data.setTime(resultSet.getLong("time"));
+                    blockLogger.getLogger().info("Retrieved the elements successfully");
+                    datas.add(data);
+                }
+                return datas;
+            }
+
+        } catch (Exception e) {
+            blockLogger.getLogger().severe(e.getMessage());
+            return null;
+        }
     }
 
     public void disableDatabaseAsync() {

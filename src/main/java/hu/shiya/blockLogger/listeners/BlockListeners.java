@@ -3,6 +3,7 @@ package hu.shiya.blockLogger.listeners;
 import hu.shiya.blockLogger.services.BlockLogger;
 import hu.shiya.blockLogger.services.Data;
 import hu.shiya.blockLogger.services.SQL;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.EventHandler;
@@ -33,8 +34,10 @@ public class BlockListeners implements Listener {
         time = System.currentTimeMillis();
         type = "break";
 
-        Data savedData = new Data(player, block, location, time, type);
-        sqlInstance.saveLoggedBlocksAsync(savedData); //Kell majd async
+        Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
+            Data savedData = new Data(player, block, location, time, type);
+            sqlInstance.saveLoggedBlocksAsync(savedData);
+        });
     }
 
     @EventHandler (ignoreCancelled = true)
@@ -46,7 +49,9 @@ public class BlockListeners implements Listener {
         time = System.currentTimeMillis();
         type = "place";
 
-        Data savedData = new Data(player, block, location, time, type);
-        sqlInstance.saveLoggedBlocksAsync(savedData); //Kell majd async
+        Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
+            Data savedData = new Data(player, block, location, time, type);
+            sqlInstance.saveLoggedBlocksAsync(savedData);
+        });
     }
 }

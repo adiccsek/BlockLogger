@@ -11,6 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,29 +56,27 @@ public class RollBack implements CommandExecutor {
                 player.sendMessage(message);
                 return true;
             }
+
             currentTime = System.currentTimeMillis() / 60000;
             long checkTime = currentTime - getTime;
+            Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> {
+                ArrayList<Data> loopDatas = sqlInstance.rollBackLogicAsync(checkTime, player.getName());
 
-            Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> { //MÉG NEM JÓ
-                int length = sqlInstance.getLengthOfDatabaseAsync();
-
-                for (int i = 0; i < length; i++) {
-                    Data data = new Data();
-                    data = sqlInstance.getLoggedBlocksAsync();
-                    long time = data.getTime();
+                for (var data : loopDatas) {
                     String playerName = data.getPlayerName();
 
-                    if (time > checkTime) {
                         if (!playerName.equals(targetPlayer)) {
                             String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
                             player.sendMessage(message);
                         }
+
+                    Bukkit.getScheduler().runTask(pluginInstance, () -> {
                         if ("break".equals(data.getType())) {
                             data.getLocation().getBlock().setType(Material.valueOf(data.getBlock()));
                         } else {
                             data.getLocation().getBlock().setType(Material.AIR);
                         }
-                    }
+                    });
                 }
             });
             return true;
