@@ -2,6 +2,7 @@ package hu.shiya.blockLogger.services;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -99,80 +100,64 @@ public class SQL {
         }
     }
 
-    //OLYAN QUERY KELL AMI MEGEGYEZIK EGY PARAMETER NEVVEL ES WITHINRADIUS LESZ LOCATION PARAMETER, radius parameter
-    // database.query("SELECT * FROM log WHERE x>? AND x<? ...", playerX-10, playerX+10, ...);
-
     public ArrayList<Data> locateLogicPlayerAsync(String playerName, Location location, int radius) {
         try {
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
                 return null;
-            } else {
-                String sql = "SELECT * FROM logged_blocks WHERE playername = ? AND x>? AND x<? AND y>? AND y<? AND z>? AND z<?";
-                PreparedStatement statement = connection.prepareStatement(sql);
-                statement.setString(1, playerName);
-                statement.setDouble(2, location.getX() + radius);
-                statement.setDouble(3, location.getX() - radius);
-                statement.setDouble(4, location.getY() + radius);
-                statement.setDouble(5, location.getY() - radius);
-                statement.setDouble(6, location.getZ() + radius);
-                statement.setDouble(7, location.getZ() - radius);
-                ResultSet resultSet = statement.executeQuery();
-                ArrayList<Data> datas = new ArrayList<>();
-                while (resultSet.next()) {
-                    Data data = new Data();
-                    data.setType(resultSet.getString("type"));
-                    data.setPlayerName(resultSet.getString("playername"));
-                    data.setBlock(resultSet.getString("block"));
-                    Location location2 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
-                    data.setLocation(location2);
-                    data.setTime(resultSet.getLong("time"));
-                    blockLogger.getLogger().info("Retrieved the elements successfully");
-                    datas.add(data);
-                }
-                return datas;
             }
 
+                double minX = location.getX() - radius;
+                double maxX = location.getX() + radius;
+                double minY = location.getY() - radius;
+                double maxY = location.getY() + radius;
+                double minZ = location.getZ() - radius;
+                double maxZ = location.getZ() + radius;
+
+             if (playerName != null) {
+                String sql = "SELECT * FROM logged_blocks WHERE playername = ? AND x >= ? AND x <= ? AND y >= ? AND y <= ? AND z >= ? AND z <= ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, playerName);
+                statement.setDouble(2, minX);
+                statement.setDouble(3, maxX);
+                statement.setDouble(4, minY);
+                statement.setDouble(5, maxY);
+                statement.setDouble(6, minZ);
+                statement.setDouble(7, maxZ);
+                return getData(statement);
+            } else {
+                String sql = "SELECT * FROM logged_blocks WHERE x >= ? AND x <= ? AND y >= ? AND y <= ? AND z >= ? AND z <= ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setDouble(1, minX);
+                statement.setDouble(2, maxX);
+                statement.setDouble(3, minY);
+                statement.setDouble(4, maxY);
+                statement.setDouble(5, minZ);
+                statement.setDouble(6, maxZ);
+                return getData(statement);
+            }
         } catch (Exception e) {
             blockLogger.getLogger().severe(e.getMessage());
             return null;
         }
     }
 
-    public ArrayList<Data> locateLogicAsync( Location location, int radius) {
-        try {
-            if (connection == null || connection.isClosed()) {
-                blockLogger.getLogger().severe("Connection is null or is closed");
-                return null;
-            } else {
-                String sql = "SELECT * FROM logged_blocks WHERE x>? AND x<? AND y>? AND y<? AND z>? AND z<?";
-                PreparedStatement statement = connection.prepareStatement(sql);
-                statement.setDouble(1, location.getX() + radius);
-                statement.setDouble(2, location.getX() - radius);
-                statement.setDouble(3, location.getY() + radius);
-                statement.setDouble(4, location.getY() - radius);
-                statement.setDouble(5, location.getZ() + radius);
-                statement.setDouble(6, location.getZ() - radius);
-                ResultSet resultSet = statement.executeQuery();
-                ArrayList<Data> datas = new ArrayList<>();
-                while (resultSet.next()) {
-                    Data data = new Data();
-                    data.setType(resultSet.getString("type"));
-                    data.setPlayerName(resultSet.getString("playername"));
-                    data.setBlock(resultSet.getString("block"));
-                    Location location3 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
-                    data.setLocation(location3);
-                    data.setTime(resultSet.getLong("time"));
-                    blockLogger.getLogger().info("Retrieved the elements successfully");
-                    datas.add(data);
-                }
-                return datas;
-            }
-
-        } catch (Exception e) {
-            blockLogger.getLogger().severe(e.getMessage());
-            return null;
+    @NotNull
+    private ArrayList<Data> getData(PreparedStatement statement) throws SQLException {
+        ResultSet resultSet = statement.executeQuery();
+        ArrayList<Data> datas = new ArrayList<>();
+        while (resultSet.next()) {
+            Data data = new Data();
+            data.setType(resultSet.getString("type"));
+            data.setPlayerName(resultSet.getString("playername"));
+            data.setBlock(resultSet.getString("block"));
+            Location location2 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
+            data.setLocation(location2);
+            data.setTime(resultSet.getLong("time"));
+            blockLogger.getLogger().info("Retrieved the elements successfully");
+            datas.add(data);
         }
+        return datas;
     }
 
     public void disableDatabaseAsync() {

@@ -13,24 +13,21 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class RollBack implements CommandExecutor {
     private final BlockLogger pluginInstance;
     private final SQL sqlInstance;
 
-    public RollBack( final BlockLogger pluginInstance , final SQL sqlInstance ) {
+    public RollBack(final BlockLogger pluginInstance, final SQL sqlInstance) {
         this.pluginInstance = pluginInstance;
         this.sqlInstance = sqlInstance;
     }
 
-
     @Override
-    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
+    public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull[] args) {
         String targetPlayer;
         long getTime;
         long currentTime;
-
 
         if (!commandSender.hasPermission("rollback-command")) {
             HashMap<String, String> placeholders = new HashMap<>();
@@ -40,6 +37,7 @@ public class RollBack implements CommandExecutor {
             commandSender.sendMessage(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
             return true;
         }
+
         if (args.length != 2) {
             String message = pluginInstance.getConfig().getString("messages.rollback.arguments-error");
             commandSender.sendMessage(message);
@@ -50,7 +48,6 @@ public class RollBack implements CommandExecutor {
             try {
                 targetPlayer = args[0];
                 getTime = Long.parseLong(args[1]);
-
             } catch (Exception e) {
                 String message = pluginInstance.getConfig().getString("messages.rollback.usage-error");
                 player.sendMessage(message);
@@ -59,16 +56,17 @@ public class RollBack implements CommandExecutor {
 
             currentTime = System.currentTimeMillis() / 60000;
             long checkTime = currentTime - getTime;
+
             Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> {
                 ArrayList<Data> loopDatas = sqlInstance.rollBackLogicAsync(checkTime, player.getName());
 
-                for (var data : loopDatas) {
+                for (Data data : loopDatas) {
                     String playerName = data.getPlayerName();
 
-                        if (!playerName.equals(targetPlayer)) {
-                            String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
-                            player.sendMessage(message);
-                        }
+                    if (!playerName.equals(targetPlayer)) {
+                        String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
+                        player.sendMessage(message);
+                    }
 
                     Bukkit.getScheduler().runTask(pluginInstance, () -> {
                         if ("break".equals(data.getType())) {
@@ -81,6 +79,7 @@ public class RollBack implements CommandExecutor {
             });
             return true;
         }
+
         return true;
     }
 }
