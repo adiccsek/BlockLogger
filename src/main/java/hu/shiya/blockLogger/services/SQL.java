@@ -1,7 +1,7 @@
 package hu.shiya.blockLogger.services;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.Block;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -84,7 +84,7 @@ public class SQL {
                     data.setType(resultSet.getString("type"));
                     data.setPlayerName(resultSet.getString("playername"));
                     data.setBlock(resultSet.getString("block"));
-                    Location location = data.createLocationSync(data);
+                    Location location = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
                     data.setLocation(location);
                     data.setTime(resultSet.getLong("time"));
                     blockLogger.getLogger().info("Retrieved the elements successfully");
@@ -116,6 +116,7 @@ public class SQL {
                 statement.setDouble(4, location.getY() + radius);
                 statement.setDouble(5, location.getY() - radius);
                 statement.setDouble(6, location.getZ() + radius);
+                statement.setDouble(7, location.getZ() - radius);
                 ResultSet resultSet = statement.executeQuery();
                 ArrayList<Data> datas = new ArrayList<>();
                 while (resultSet.next()) {
@@ -123,7 +124,7 @@ public class SQL {
                     data.setType(resultSet.getString("type"));
                     data.setPlayerName(resultSet.getString("playername"));
                     data.setBlock(resultSet.getString("block"));
-                    Location location2 = data.createLocationSync(data);
+                    Location location2 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
                     data.setLocation(location2);
                     data.setTime(resultSet.getLong("time"));
                     blockLogger.getLogger().info("Retrieved the elements successfully");
@@ -146,11 +147,12 @@ public class SQL {
             } else {
                 String sql = "SELECT * FROM logged_blocks WHERE x>? AND x<? AND y>? AND y<? AND z>? AND z<?";
                 PreparedStatement statement = connection.prepareStatement(sql);
-                statement.setDouble(2, location.getX() + radius);
-                statement.setDouble(3, location.getX() - radius);
-                statement.setDouble(4, location.getY() + radius);
-                statement.setDouble(5, location.getY() - radius);
-                statement.setDouble(6, location.getZ() + radius);
+                statement.setDouble(1, location.getX() + radius);
+                statement.setDouble(2, location.getX() - radius);
+                statement.setDouble(3, location.getY() + radius);
+                statement.setDouble(4, location.getY() - radius);
+                statement.setDouble(5, location.getZ() + radius);
+                statement.setDouble(6, location.getZ() - radius);
                 ResultSet resultSet = statement.executeQuery();
                 ArrayList<Data> datas = new ArrayList<>();
                 while (resultSet.next()) {
@@ -158,8 +160,8 @@ public class SQL {
                     data.setType(resultSet.getString("type"));
                     data.setPlayerName(resultSet.getString("playername"));
                     data.setBlock(resultSet.getString("block"));
-                    Location location2 = data.createLocationSync(data);
-                    data.setLocation(location2);
+                    Location location3 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
+                    data.setLocation(location3);
                     data.setTime(resultSet.getLong("time"));
                     blockLogger.getLogger().info("Retrieved the elements successfully");
                     datas.add(data);

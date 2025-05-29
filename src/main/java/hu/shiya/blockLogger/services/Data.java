@@ -51,34 +51,4 @@ public class Data {
     public void setTime( long time ) {
         this.time = time;
     }
-
-
-    public Location createLocationSync(Data data) {
-        World world = data.getLocation().getWorld();
-        double x = data.getLocation().getX();
-        double y = data.getLocation().getY();
-        double z = data.getLocation().getZ();
-        return new Location(world, x, y, z);
-    }
-
-
-    public void save(ConfigurationSection conf) {
-        conf.set(".type", this.getType());
-        conf.set(".playername", this.getPlayerName());
-        conf.set(".block", this.getBlock());
-        conf.set(".location.world", this.getLocation().getWorld().getName());
-        conf.set(".location.x", this.getLocation().getBlockX());
-        conf.set(".location.y", this.getLocation().getBlockY());
-        conf.set(".location.z", this.getLocation().getBlockZ());
-        conf.set(".time", this.getTime() / 60000);
-    }
-
-    public void load(ConfigurationSection conf) {
-       this.type = conf.getString("type");
-       this.playerName = conf.getString("playername");
-       this.block = conf.getString("block");
-       World bukkitWorld = Bukkit.getWorld(conf.getString("location.world"));
-       this.location = new Location(bukkitWorld, conf.getInt("location.x"), conf.getInt("location.y"), conf.getInt("location.z"));
-       this.time = conf.getLong("time");
-    }
 }

@@ -45,7 +45,6 @@ public class LocateCommand implements CommandExecutor {
             return true;
         }
 
-
         if (args.length > 2 || args.length == 0) {
             String message = pluginInstance.getConfig().getString("messages.locate.arguments-error");
             commandSender.sendMessage(message);
@@ -53,12 +52,6 @@ public class LocateCommand implements CommandExecutor {
         }
         if (commandSender instanceof Player player) {
             Location currentLocation = player.getLocation();
-            ConfigurationSection conf = pluginInstance.getConfig().getConfigurationSection( "logs" );
-            if (conf == null) {
-                String message = pluginInstance.getConfig().getString("messages.locate.data-error");
-                player.sendMessage(message);
-                return true;
-            }
 
                 Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
                     int radius = Integer.MIN_VALUE;
@@ -117,7 +110,7 @@ public class LocateCommand implements CommandExecutor {
                                     output.add(Placeholder.placeholder(rawMessage, placeholders));
                                 });
                         }
-                        } else if (args.length == 1) {
+                    } else if (args.length == 1) {
                         ArrayList<Data> loopDatas = sqlInstance.locateLogicAsync( currentLocation, radius );
                         for (Data data : loopDatas) {
                             HashMap<String, String> placeholders = new HashMap<>();
@@ -165,17 +158,20 @@ public class LocateCommand implements CommandExecutor {
                                 }, 6 * 20L);
 
                                 output.add(Placeholder.placeholder(rawMessage, placeholders));
-                            });
-                    }}});
 
-            if (!output.isEmpty()) {
-                for (String text : output) {
-                    player.sendMessage( text );
-                }} else {
-                String message = pluginInstance.getConfig().getString("messages.locate.data-error");
-                player.sendMessage(message);
-                return true;
-            }
+                                if (!output.isEmpty()) {
+                                    for (String text : output) {
+                                        player.sendMessage( text );
+                                    }} else {
+                                    String message = pluginInstance.getConfig().getString("messages.locate.data-error");
+                                    player.sendMessage(message);
+                                }
+                            });
+                        }
+                    }
+                });
+
+
         }
         return true;
     }
