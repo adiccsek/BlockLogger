@@ -34,6 +34,8 @@ public class BlockListeners implements Listener {
         time = System.currentTimeMillis();
         type = "break";
 
+
+
         Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
             Data savedData = new Data(player, block, location, time, type);
             sqlInstance.saveLoggedBlocksAsync(savedData);

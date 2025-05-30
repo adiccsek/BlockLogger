@@ -58,7 +58,7 @@ public class RollBack implements CommandExecutor {
             long checkTime = currentTime - getTime;
 
             Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> {
-                ArrayList<Data> loopDatas = sqlInstance.rollBackLogicAsync(checkTime, player.getName());
+                ArrayList<Data> loopDatas = sqlInstance.rollBackLogicAsync(checkTime, targetPlayer);
 
                 for (Data data : loopDatas) {
                     String playerName = data.getPlayerName();
@@ -66,6 +66,7 @@ public class RollBack implements CommandExecutor {
                     if (!playerName.equals(targetPlayer)) {
                         String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
                         player.sendMessage(message);
+                        return;
                     }
 
                     Bukkit.getScheduler().runTask(pluginInstance, () -> {
@@ -79,7 +80,6 @@ public class RollBack implements CommandExecutor {
             });
             return true;
         }
-
         return true;
     }
 }

@@ -85,7 +85,7 @@ public class LocateCommand implements CommandExecutor {
                     HashMap<String, String> placeholders = new HashMap<>();
                     String rawMessage = pluginInstance.getConfig().getString("messages.locate.locate-correct");
 
-                    placeholders.put("player", player.getName());
+                    placeholders.put("player", data.getPlayerName());
                     placeholders.put("type", data.getType());
                     placeholders.put("block", String.valueOf(data.getBlock()));
                     placeholders.put("x", String.valueOf(data.getLocation().getBlockX()));

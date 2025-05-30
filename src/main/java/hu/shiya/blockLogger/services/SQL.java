@@ -47,23 +47,51 @@ public class SQL {
         try {
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
-            } else {
-                String sql = "INSERT INTO logged_blocks (type, playername, block, world, x ,y ,z, time) VALUES (?, ?, ? ,? ,? ,? ,?, ?)";
-                PreparedStatement statement = connection.prepareStatement(sql);
-                statement.setString(1, data.getType());
-                statement.setString(2, data.getPlayerName());
-                statement.setString(3, data.getBlock());
-                statement.setString(4, data.getLocation().getWorld().getName());
-                statement.setDouble(5, data.getLocation().getBlockX());
-                statement.setDouble(6, data.getLocation().getBlockY());
-                statement.setDouble(7, data.getLocation().getBlockZ());
-                statement.setLong(8, data.getTime());
-
-                statement.executeUpdate();
-                blockLogger.getLogger().info("Added the elements successfully");
+                return;
             }
+            int rowsAffected = 0;
+            if (!data.getType().equalsIgnoreCase("place")) {
+
+                String updateSql = "UPDATE logged_blocks SET type = ?, time = ?, world = ?, x = ?, y = ?, z = ?, playername = ? " +
+                        "WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ?";
+
+                PreparedStatement updateStatement = connection.prepareStatement(updateSql);
+                updateStatement.setString(1, data.getType());
+                updateStatement.setLong(2, data.getTime());
+                updateStatement.setString(3, data.getLocation().getWorld().getName());
+                updateStatement.setInt(4, data.getLocation().getBlockX());
+                updateStatement.setInt(5, data.getLocation().getBlockY());
+                updateStatement.setInt(6, data.getLocation().getBlockZ());
+                updateStatement.setString(7, data.getPlayerName());
+
+                updateStatement.setString(8, data.getLocation().getWorld().getName());
+                updateStatement.setInt(9, data.getLocation().getBlockX());
+                updateStatement.setInt(10, data.getLocation().getBlockY());
+                updateStatement.setInt(11, data.getLocation().getBlockZ());
+                updateStatement.setString(12, data.getPlayerName());
+
+                rowsAffected = updateStatement.executeUpdate();
+                blockLogger.getLogger().info("Updated rows: " + rowsAffected);
+            }
+
+            if (rowsAffected == 0) {
+                String insertSql = "INSERT INTO logged_blocks (type, time, world, x, y, z, playername, block) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement insertStatement = connection.prepareStatement(insertSql);
+                insertStatement.setString(1, data.getType());
+                insertStatement.setLong(2, data.getTime());
+                insertStatement.setString(3, data.getLocation().getWorld().getName());
+                insertStatement.setInt(4, data.getLocation().getBlockX());
+                insertStatement.setInt(5, data.getLocation().getBlockY());
+                insertStatement.setInt(6, data.getLocation().getBlockZ());
+                insertStatement.setString(7, data.getPlayerName());
+                insertStatement.setString(8, data.getBlock());
+
+                insertStatement.executeUpdate();
+                blockLogger.getLogger().info("Inserted new block log entry.");
+            }
+
         } catch (SQLException e) {
-            blockLogger.getLogger().severe(e.getMessage());
+            blockLogger.getLogger().severe("Database error: " + e.getMessage());
         }
     }
 
@@ -89,6 +117,7 @@ public class SQL {
                     data.setLocation(location);
                     data.setTime(resultSet.getLong("time"));
                     blockLogger.getLogger().info("Retrieved the elements successfully");
+                    blockLogger.getLogger().info(data.toString());
                     datas.add(data);
                 }
                 return datas;
