@@ -1,7 +1,9 @@
 package hu.shiya.blockLogger.listeners;
 
-import hu.shiya.blockLogger.BlockLogger;
-import hu.shiya.blockLogger.Data;
+import hu.shiya.blockLogger.services.BlockLogger;
+import hu.shiya.blockLogger.services.Data;
+import hu.shiya.blockLogger.services.SQL;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.event.EventHandler;
@@ -18,16 +20,10 @@ public class BlockListeners implements Listener {
     long time;
 
     private final BlockLogger pluginInstance;
-    public BlockListeners( final BlockLogger pluginInstance ) {
+    private final SQL sqlInstance;
+    public BlockListeners( final BlockLogger pluginInstance , final SQL sqlInstance ) {
         this.pluginInstance = pluginInstance;
-    }
-    public int generateKey() {
-        for(int i = 0; i < Integer.MAX_VALUE; ++i) {
-            if(pluginInstance.getConfig().getString("logs." + i, null) == null) {
-                return i;
-            }
-        }
-        return 0;
+        this.sqlInstance = sqlInstance;
     }
 
     @EventHandler
@@ -38,12 +34,12 @@ public class BlockListeners implements Listener {
         time = System.currentTimeMillis();
         type = "break";
 
-        Data savedData = new Data(player, block, location, time, type);
-        int key = generateKey();
-        ConfigurationSection conf = pluginInstance.getConfig().getConfigurationSection("logs." + key);
-        if (conf == null) { conf = pluginInstance.getConfig().createSection("logs." + key); }
-        savedData.save(conf);
-        pluginInstance.saveConfig();
+
+
+        Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
+            Data savedData = new Data(player, block, location, time, type);
+            sqlInstance.saveLoggedBlocksAsync(savedData);
+        });
     }
 
     @EventHandler (ignoreCancelled = true)
@@ -55,13 +51,9 @@ public class BlockListeners implements Listener {
         time = System.currentTimeMillis();
         type = "place";
 
-        Data savedData = new Data(player, block, location, time, type);
-        int key = generateKey();
-        System.out.println("DEBUG2" + event.getBlock().getType());
-        ConfigurationSection conf = pluginInstance.getConfig().getConfigurationSection("logs." + key);
-        if (conf == null) { conf = pluginInstance.getConfig().createSection("logs." + key); }
-        savedData.save(conf);
-        pluginInstance.saveConfig();
-        System.out.println("DEBUG3" + event.getBlock().getType());
+        Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
+            Data savedData = new Data(player, block, location, time, type);
+            sqlInstance.saveLoggedBlocksAsync(savedData);
+        });
     }
 }

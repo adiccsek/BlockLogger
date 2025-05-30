@@ -1,0 +1,206 @@
+package hu.shiya.blockLogger.services;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
+
+import java.sql.*;
+import java.util.ArrayList;
+
+public class SQL {
+    private final BlockLogger blockLogger;
+    private Connection connection;
+
+    public SQL(final BlockLogger blockLogger) {
+        this.blockLogger = blockLogger;
+    }
+
+    public void handleDatabaseAsync(String host, String password, String user, String database) {
+        try {
+            String url = "jdbc:mysql://" + host + "/" + database;
+            connection = DriverManager.getConnection(url, user, password);
+            blockLogger.getLogger().info("Connected to the database");
+
+            if (connection != null && !connection.isClosed()) {
+                String sql = "CREATE TABLE IF NOT EXISTS logged_blocks (" +
+                        "id INT AUTO_INCREMENT PRIMARY KEY," +
+                        "type VARCHAR(50)," +
+                        "playername VARCHAR(50)," +
+                        "block VARCHAR(100)," +
+                        "world VARCHAR(100)," +
+                        "x DOUBLE," +
+                        "y DOUBLE," +
+                        "z DOUBLE," +
+                        "time BIGINT)";
+
+                Statement statement = connection.createStatement();
+                statement.executeUpdate(sql);
+                blockLogger.getLogger().info("Created the table");
+
+            }
+        } catch (SQLException e) {
+            blockLogger.getLogger().severe(e.getMessage());
+        }
+    }
+
+    public void saveLoggedBlocksAsync(Data data) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+                return;
+            }
+            int rowsAffected = 0;
+            if (!data.getType().equalsIgnoreCase("place")) {
+
+                String updateSql = "UPDATE logged_blocks SET type = ?, time = ?, world = ?, x = ?, y = ?, z = ?, playername = ? " +
+                        "WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ?";
+
+                PreparedStatement updateStatement = connection.prepareStatement(updateSql);
+                updateStatement.setString(1, data.getType());
+                updateStatement.setLong(2, data.getTime());
+                updateStatement.setString(3, data.getLocation().getWorld().getName());
+                updateStatement.setInt(4, data.getLocation().getBlockX());
+                updateStatement.setInt(5, data.getLocation().getBlockY());
+                updateStatement.setInt(6, data.getLocation().getBlockZ());
+                updateStatement.setString(7, data.getPlayerName());
+
+                updateStatement.setString(8, data.getLocation().getWorld().getName());
+                updateStatement.setInt(9, data.getLocation().getBlockX());
+                updateStatement.setInt(10, data.getLocation().getBlockY());
+                updateStatement.setInt(11, data.getLocation().getBlockZ());
+                updateStatement.setString(12, data.getPlayerName());
+
+                rowsAffected = updateStatement.executeUpdate();
+                blockLogger.getLogger().info("Updated rows: " + rowsAffected);
+            }
+
+            if (rowsAffected == 0) {
+                String insertSql = "INSERT INTO logged_blocks (type, time, world, x, y, z, playername, block) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                PreparedStatement insertStatement = connection.prepareStatement(insertSql);
+                insertStatement.setString(1, data.getType());
+                insertStatement.setLong(2, data.getTime());
+                insertStatement.setString(3, data.getLocation().getWorld().getName());
+                insertStatement.setInt(4, data.getLocation().getBlockX());
+                insertStatement.setInt(5, data.getLocation().getBlockY());
+                insertStatement.setInt(6, data.getLocation().getBlockZ());
+                insertStatement.setString(7, data.getPlayerName());
+                insertStatement.setString(8, data.getBlock());
+
+                insertStatement.executeUpdate();
+                blockLogger.getLogger().info("Inserted new block log entry.");
+            }
+
+        } catch (SQLException e) {
+            blockLogger.getLogger().severe("Database error: " + e.getMessage());
+        }
+    }
+
+    public ArrayList<Data> rollBackLogicAsync(long checkTime, String playerName) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+                return null;
+            } else {
+                ArrayList<Data> datas = new ArrayList<>();
+                String sql = "SELECT * FROM logged_blocks WHERE time > ? AND playername = ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setLong(1, checkTime);
+                statement.setString(2, playerName);
+                ResultSet resultSet = statement.executeQuery();
+
+                while (resultSet.next()) {
+                    Data data = new Data();
+                    data.setType(resultSet.getString("type"));
+                    data.setPlayerName(resultSet.getString("playername"));
+                    data.setBlock(resultSet.getString("block"));
+                    Location location = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
+                    data.setLocation(location);
+                    data.setTime(resultSet.getLong("time"));
+                    blockLogger.getLogger().info("Retrieved the elements successfully");
+                    blockLogger.getLogger().info(data.toString());
+                    datas.add(data);
+                }
+                return datas;
+            }
+
+        } catch (Exception e) {
+            blockLogger.getLogger().severe(e.getMessage());
+            return null;
+        }
+    }
+
+    public ArrayList<Data> locateLogicPlayerAsync(String playerName, Location location, int radius) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+                return null;
+            }
+
+                double minX = location.getX() - radius;
+                double maxX = location.getX() + radius;
+                double minY = location.getY() - radius;
+                double maxY = location.getY() + radius;
+                double minZ = location.getZ() - radius;
+                double maxZ = location.getZ() + radius;
+
+             if (playerName != null) {
+                String sql = "SELECT * FROM logged_blocks WHERE playername = ? AND x >= ? AND x <= ? AND y >= ? AND y <= ? AND z >= ? AND z <= ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, playerName);
+                statement.setDouble(2, minX);
+                statement.setDouble(3, maxX);
+                statement.setDouble(4, minY);
+                statement.setDouble(5, maxY);
+                statement.setDouble(6, minZ);
+                statement.setDouble(7, maxZ);
+                return getData(statement);
+            } else {
+                String sql = "SELECT * FROM logged_blocks WHERE x >= ? AND x <= ? AND y >= ? AND y <= ? AND z >= ? AND z <= ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setDouble(1, minX);
+                statement.setDouble(2, maxX);
+                statement.setDouble(3, minY);
+                statement.setDouble(4, maxY);
+                statement.setDouble(5, minZ);
+                statement.setDouble(6, maxZ);
+                return getData(statement);
+            }
+        } catch (Exception e) {
+            blockLogger.getLogger().severe(e.getMessage());
+            return null;
+        }
+    }
+
+    @NotNull
+    private ArrayList<Data> getData(PreparedStatement statement) throws SQLException {
+        ResultSet resultSet = statement.executeQuery();
+        ArrayList<Data> datas = new ArrayList<>();
+        while (resultSet.next()) {
+            Data data = new Data();
+            data.setType(resultSet.getString("type"));
+            data.setPlayerName(resultSet.getString("playername"));
+            data.setBlock(resultSet.getString("block"));
+            Location location2 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
+            data.setLocation(location2);
+            data.setTime(resultSet.getLong("time"));
+            blockLogger.getLogger().info("Retrieved the elements successfully");
+            datas.add(data);
+        }
+        return datas;
+    }
+
+    public void disableDatabaseAsync() {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+            } else {
+                connection.close();
+                blockLogger.getLogger().info("Disabling the database");
+            }
+        } catch (Exception e) {
+            blockLogger.getLogger().severe(e.getMessage());
+        } finally {
+            connection = null;
+        }
+    }
+}

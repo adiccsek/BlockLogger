@@ -1,4 +1,4 @@
-package hu.shiya.blockLogger;
+package hu.shiya.blockLogger.services;
 
 import java.util.HashMap;
 import java.util.Map;
