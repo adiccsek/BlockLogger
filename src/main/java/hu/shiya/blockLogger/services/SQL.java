@@ -22,7 +22,8 @@ public class SQL {
             blockLogger.getLogger().info("Connected to the database");
 
             if (connection != null && !connection.isClosed()) {
-                String sql = "CREATE TABLE IF NOT EXISTS logged_blocks (" +
+                // Create logged_blocks
+                String sql1 = "CREATE TABLE IF NOT EXISTS logged_blocks (" +
                         "id INT AUTO_INCREMENT PRIMARY KEY," +
                         "type VARCHAR(50)," +
                         "playername VARCHAR(50)," +
@@ -31,13 +32,28 @@ public class SQL {
                         "x DOUBLE," +
                         "y DOUBLE," +
                         "z DOUBLE," +
-                        "time BIGINT)";
+                        "time BIGINT," +
+                        "gamemode VARCHAR(50))";
+                PreparedStatement statement1 = connection.prepareStatement(sql1);
+                statement1.executeUpdate();
 
-                Statement statement = connection.createStatement();
-                statement.executeUpdate(sql);
-                blockLogger.getLogger().info("Created the table");
-
+                // Create rolled_logged_blocks
+                String sql2 = "CREATE TABLE IF NOT EXISTS rolled_logged_blocks (" +
+                        "id INT AUTO_INCREMENT PRIMARY KEY," +
+                        "type VARCHAR(50)," +
+                        "playername VARCHAR(50)," +
+                        "block VARCHAR(100)," +
+                        "world VARCHAR(100)," +
+                        "x DOUBLE," +
+                        "y DOUBLE," +
+                        "z DOUBLE," +
+                        "time BIGINT ," +
+                        "gamemode VARCHAR(50))";
+                PreparedStatement statement2 = connection.prepareStatement(sql2);
+                statement2.executeUpdate();
             }
+                blockLogger.getLogger().info("Created the tables");
+
         } catch (SQLException e) {
             blockLogger.getLogger().severe(e.getMessage());
         }
@@ -53,7 +69,7 @@ public class SQL {
             if (!data.getType().equalsIgnoreCase("place")) {
 
                 String updateSql = "UPDATE logged_blocks SET type = ?, time = ?, world = ?, x = ?, y = ?, z = ?, playername = ? " +
-                        "WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ?";
+                        "WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ? AND gamemode = ?";
 
                 PreparedStatement updateStatement = connection.prepareStatement(updateSql);
                 updateStatement.setString(1, data.getType());
@@ -69,25 +85,16 @@ public class SQL {
                 updateStatement.setInt(10, data.getLocation().getBlockY());
                 updateStatement.setInt(11, data.getLocation().getBlockZ());
                 updateStatement.setString(12, data.getPlayerName());
+                updateStatement.setString(13, data.getLocation().getWorld().getName());
+
 
                 rowsAffected = updateStatement.executeUpdate();
                 blockLogger.getLogger().info("Updated rows: " + rowsAffected);
             }
 
             if (rowsAffected == 0) {
-                String insertSql = "INSERT INTO logged_blocks (type, time, world, x, y, z, playername, block) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-                PreparedStatement insertStatement = connection.prepareStatement(insertSql);
-                insertStatement.setString(1, data.getType());
-                insertStatement.setLong(2, data.getTime());
-                insertStatement.setString(3, data.getLocation().getWorld().getName());
-                insertStatement.setInt(4, data.getLocation().getBlockX());
-                insertStatement.setInt(5, data.getLocation().getBlockY());
-                insertStatement.setInt(6, data.getLocation().getBlockZ());
-                insertStatement.setString(7, data.getPlayerName());
-                insertStatement.setString(8, data.getBlock());
-
-                insertStatement.executeUpdate();
-                blockLogger.getLogger().info("Inserted new block log entry.");
+                String insertSql = "INSERT INTO logged_blocks (type, time, world, x, y, z, playername, block, gamemode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                insertData(data, insertSql);
             }
 
         } catch (SQLException e) {
@@ -116,6 +123,7 @@ public class SQL {
                     Location location = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
                     data.setLocation(location);
                     data.setTime(resultSet.getLong("time"));
+                    data.setGameMode(resultSet.getString("gamemode"));
                     blockLogger.getLogger().info("Retrieved the elements successfully");
                     blockLogger.getLogger().info(data.toString());
                     datas.add(data);
@@ -128,6 +136,32 @@ public class SQL {
             return null;
         }
     }
+    public void deleteRollBackAsync(long givenArgumentTime, Data data) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                blockLogger.getLogger().severe("Connection is null or is closed");
+            } else {
+                String sql = "DELETE FROM logged_blocks WHERE time > ? AND world = ? AND x = ? AND y = ? AND z = ? AND playername = ?";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setLong(1, givenArgumentTime);
+                statement.setString(2, data.getLocation().getWorld().getName());
+                statement.setDouble(3, data.getLocation().getBlockX());
+                statement.setDouble(4, data.getLocation().getBlockY());
+                statement.setDouble(5, data.getLocation().getBlockZ());
+                statement.setString(6, data.getPlayerName());
+
+                statement.executeUpdate();
+                blockLogger.getLogger().info("Deleted the elements successfully (logged_blocks)");
+
+                String sql2 = "INSERT INTO rolled_logged_blocks (type, time, world, x, y, z, playername, block, gamemode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                insertData(data, sql2);
+            }
+        } catch ( Exception e ) {
+            blockLogger.getLogger().severe(e.getMessage());
+        }
+    }
+
+
 
     public ArrayList<Data> locateLogicPlayerAsync(String playerName, Location location, int radius) {
         try {
@@ -183,10 +217,27 @@ public class SQL {
             Location location2 = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
             data.setLocation(location2);
             data.setTime(resultSet.getLong("time"));
+            data.setGameMode(resultSet.getString("gamemode"));
             blockLogger.getLogger().info("Retrieved the elements successfully");
             datas.add(data);
         }
         return datas;
+    }
+
+    private void insertData(Data data, String sql2) throws SQLException {
+        PreparedStatement insertStatement = connection.prepareStatement(sql2);
+        insertStatement.setString(1, data.getType());
+        insertStatement.setLong(2, data.getTime());
+        insertStatement.setString(3, data.getLocation().getWorld().getName());
+        insertStatement.setInt(4, data.getLocation().getBlockX());
+        insertStatement.setInt(5, data.getLocation().getBlockY());
+        insertStatement.setInt(6, data.getLocation().getBlockZ());
+        insertStatement.setString(7, data.getPlayerName());
+        insertStatement.setString(8, data.getBlock());
+        insertStatement.setString(9, data.getGameMode());
+
+        insertStatement.executeUpdate();
+        blockLogger.getLogger().info("Inserted new block log entry.");
     }
 
     public void disableDatabaseAsync() {

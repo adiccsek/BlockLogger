@@ -9,6 +9,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -62,6 +64,7 @@ public class RollBack implements CommandExecutor {
 
                 for (Data data : loopDatas) {
                     String playerName = data.getPlayerName();
+                    sqlInstance.deleteRollBackAsync(checkTime, data);
 
                     if (!playerName.equals(targetPlayer)) {
                         String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
@@ -72,8 +75,10 @@ public class RollBack implements CommandExecutor {
                     Bukkit.getScheduler().runTask(pluginInstance, () -> {
                         if ("break".equals(data.getType())) {
                             data.getLocation().getBlock().setType(Material.valueOf(data.getBlock()));
+                            itemHandlingTake(targetPlayer, player, data);
                         } else {
                             data.getLocation().getBlock().setType(Material.AIR);
+                            itemHandlingAdd(targetPlayer, player, data);
                         }
                     });
                 }
@@ -81,5 +86,33 @@ public class RollBack implements CommandExecutor {
             return true;
         }
         return true;
+    }
+
+    private void itemHandlingAdd(String targetPlayer, Player player, Data data) {
+        if ("SURVIVAL".equals(data.getGameMode())) {
+            Player target = Bukkit.getPlayer(targetPlayer);
+            Inventory inventory = target.getInventory();
+            ItemStack item = new ItemStack(Material.valueOf(data.getBlock()));
+
+            inventory.addItem(item);
+            player.sendMessage("You have added " + data.getBlock() + " to the inventory of: " + targetPlayer);
+        }
+    }
+        private void itemHandlingTake(String targetPlayer, Player player, Data data) {
+            if ("SURVIVAL".equals(data.getGameMode())) {
+                Player target = Bukkit.getPlayer(targetPlayer);
+                Inventory inventory = target.getInventory();
+                ItemStack item = new ItemStack(Material.valueOf(data.getBlock()));
+
+                for (int i = 0; i < inventory.getSize(); i++) {
+                    ItemStack currentItem = inventory.getItem(i);
+
+                    if (currentItem != null && currentItem.equals(item)) {
+                        inventory.setItem(i, null);
+                        break;
+                    }
+                }
+                player.sendMessage("You have added " + data.getBlock() + " to the inventory of: " + targetPlayer);
+            }
     }
 }

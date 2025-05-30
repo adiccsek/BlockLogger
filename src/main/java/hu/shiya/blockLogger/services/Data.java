@@ -11,12 +11,14 @@ public class Data {
     private String block;
     private Location location;
     private long time;
-    public Data(String playerName, String block, Location location, long time, String type) {
+    private String gameMode;
+    public Data(String playerName, String block, Location location, long time, String type, String gameMode) {
         this.playerName = playerName;
         this.block = block;
         this.location = location;
         this.time = time;
         this.type = type;
+        this.gameMode = gameMode;
     }
     public Data( ) { }
 
@@ -35,6 +37,7 @@ public class Data {
     public String getType() {
         return type;
     }
+    public String getGameMode() { return gameMode; }
 
     public void setType( String type ) {
         this.type = type;
@@ -51,4 +54,5 @@ public class Data {
     public void setTime( long time ) {
         this.time = time;
     }
+    public void setGameMode( String gameMode ) { this.gameMode = gameMode; }
 }

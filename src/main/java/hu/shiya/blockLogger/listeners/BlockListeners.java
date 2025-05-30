@@ -18,6 +18,7 @@ public class BlockListeners implements Listener {
     String block;
     Location location;
     long time;
+    String gameMode;
 
     private final BlockLogger pluginInstance;
     private final SQL sqlInstance;
@@ -33,11 +34,12 @@ public class BlockListeners implements Listener {
         location = event.getBlock().getLocation();
         time = System.currentTimeMillis();
         type = "break";
+        gameMode = event.getPlayer().getGameMode().toString();
 
 
 
         Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
-            Data savedData = new Data(player, block, location, time, type);
+            Data savedData = new Data(player, block, location, time, type, gameMode);
             sqlInstance.saveLoggedBlocksAsync(savedData);
         });
     }
@@ -52,7 +54,7 @@ public class BlockListeners implements Listener {
         type = "place";
 
         Bukkit.getScheduler().runTaskAsynchronously( pluginInstance, () -> {
-            Data savedData = new Data(player, block, location, time, type);
+            Data savedData = new Data(player, block, location, time, type, gameMode);
             sqlInstance.saveLoggedBlocksAsync(savedData);
         });
     }
