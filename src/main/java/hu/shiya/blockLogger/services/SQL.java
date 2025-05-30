@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.FileWriter;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -136,7 +137,7 @@ public class SQL {
             return null;
         }
     }
-    public void deleteRollBackAsync(long givenArgumentTime, Data data) {
+    public void handleRollBackAsync(long givenArgumentTime, Data data) {
         try {
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
@@ -238,6 +239,32 @@ public class SQL {
 
         insertStatement.executeUpdate();
         blockLogger.getLogger().info("Inserted new block log entry.");
+    }
+
+    public void writeLoggedBlocksAsync(String fileRoute) {
+        try {
+            FileWriter writer = new FileWriter(fileRoute);
+            String sql = "SELECT * FROM rolled_logged_blocks";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                Data data = new Data();
+                data.setType(resultSet.getString("type"));
+                data.setPlayerName(resultSet.getString("playername"));
+                data.setBlock(resultSet.getString("block"));
+                Location location = new Location(Bukkit.getWorld(resultSet.getString("world")), resultSet.getDouble("x"), resultSet.getDouble("y"), resultSet.getDouble("z"));
+                data.setLocation(location);
+                data.setTime(resultSet.getLong("time"));
+                data.setGameMode(resultSet.getString("gamemode"));
+
+                writer.write( data.getType() + ";" + data.getPlayerName() + ";" + data.getBlock() + ";" +
+                        data.getLocation() + ";" + data.getTime() + ";" + data.getGameMode() + ";" + "\n");
+            }
+            blockLogger.getLogger().info("Written the elements successfully (fileWriter)");
+        } catch (Exception e) {
+            blockLogger.getLogger().severe(e.getMessage());
+        }
     }
 
     public void disableDatabaseAsync() {

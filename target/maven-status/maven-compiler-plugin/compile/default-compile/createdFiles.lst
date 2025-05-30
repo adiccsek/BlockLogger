@@ -3,5 +3,6 @@ hu\shiya\blockLogger\commands\RollBack.class
 hu\shiya\blockLogger\services\SQL.class
 hu\shiya\blockLogger\services\BlockLogger.class
 hu\shiya\blockLogger\services\Data.class
+hu\shiya\blockLogger\commands\WriteToFileCommand.class
 hu\shiya\blockLogger\services\Placeholder.class
 hu\shiya\blockLogger\listeners\BlockListeners.class

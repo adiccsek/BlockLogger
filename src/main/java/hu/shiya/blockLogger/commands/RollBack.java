@@ -64,7 +64,7 @@ public class RollBack implements CommandExecutor {
 
                 for (Data data : loopDatas) {
                     String playerName = data.getPlayerName();
-                    sqlInstance.deleteRollBackAsync(checkTime, data);
+                    sqlInstance.handleRollBackAsync(checkTime, data);
 
                     if (!playerName.equals(targetPlayer)) {
                         String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
