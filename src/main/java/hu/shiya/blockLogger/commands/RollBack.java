@@ -4,6 +4,7 @@ import hu.shiya.blockLogger.services.BlockLogger;
 import hu.shiya.blockLogger.services.Data;
 import hu.shiya.blockLogger.services.Placeholder;
 import hu.shiya.blockLogger.services.SQL;
+import hu.shiya.blockLogger.utils.FallBlockUtility;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -75,12 +76,20 @@ public class RollBack implements CommandExecutor {
                     }
 
                     Bukkit.getScheduler().runTask(pluginInstance, () -> {
-                        if ("break".equals(data.getType())) {
+                        if (!"break".equals(data.getType())) {
+                            Material material = Material.getMaterial(data.getBlock());
+                            if (FallBlockUtility.isFallableBlock(material)) {
+                                World world = data.getLocation().getWorld();
+                                int x = data.getLocation().getBlockX();
+                                int z = data.getLocation().getBlockZ();
+                                removeSandOnXZColumn(world, x, z);
+                            } else {
+                                data.getLocation().getBlock().setType(Material.AIR);
+                                itemHandlingAdd(targetPlayer, player, data);
+                            }
+                        } else {
                             data.getLocation().getBlock().setType(Material.valueOf(data.getBlock()));
                             itemHandlingTake(targetPlayer, player, data);
-                        } else {
-                            data.getLocation().getBlock().setType(Material.AIR);
-                            itemHandlingAdd(targetPlayer, player, data);
                         }
                     });
                 }
@@ -91,6 +100,17 @@ public class RollBack implements CommandExecutor {
             return true;
         }
         return true;
+    }
+    public void removeSandOnXZColumn(World world, int x, int z) {
+        for (int y = 0; y < world.getMaxHeight(); y++) {
+            Location loc = new Location(world, x, y, z);
+            Material blockType = loc.getBlock().getType();
+
+            if (FallBlockUtility.isFallableBlock(blockType)) {
+                loc.getBlock().setType(Material.AIR);
+                return;
+            }
+        }
     }
 
     private void itemHandlingAdd(String targetPlayer, Player player, Data data) {

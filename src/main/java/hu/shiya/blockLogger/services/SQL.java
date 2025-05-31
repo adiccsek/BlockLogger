@@ -147,7 +147,7 @@ public class SQL {
         }
     }
     public void handleRollBackAsync(long givenArgumentTime, Data data) {
-        try {
+        try { //if IsFallable akkor a z-t nem kell nézni
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
             } else {
@@ -281,6 +281,7 @@ public class SQL {
                 writer.write( data.getType() + ";" + data.getPlayerName() + ";" + data.getBlock() + ";" +
                         data.getLocation() + ";" + data.getTime() + ";" + data.getGameMode() + ";" + data.getRollBlock() + data.getRollAmount() + "\n");
             }
+            writer.close();
             if (config.getBoolean("debug-messages")) {
                 blockLogger.getLogger().info("Written the elements successfully");
             }

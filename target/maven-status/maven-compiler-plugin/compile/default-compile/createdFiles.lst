@@ -1,5 +1,6 @@
 hu\shiya\blockLogger\commands\LocateCommand.class
 hu\shiya\blockLogger\commands\RollBack.class
+hu\shiya\blockLogger\utils\FallBlockUtility.class
 hu\shiya\blockLogger\services\SQL.class
 hu\shiya\blockLogger\services\BlockLogger.class
 hu\shiya\blockLogger\services\Data.class
