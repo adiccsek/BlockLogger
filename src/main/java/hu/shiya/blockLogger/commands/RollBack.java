@@ -82,7 +82,8 @@ public class RollBack implements CommandExecutor {
                                 World world = data.getLocation().getWorld();
                                 int x = data.getLocation().getBlockX();
                                 int z = data.getLocation().getBlockZ();
-                                removeFallBlockOnXZColumn(world, x, z);
+                                int y = data.getLocation().getBlockY();
+                                removeFallBlockOnXZColumn(world, x, z, y);
                                 itemHandlingAdd(targetPlayer, player, data);
                             } else {
                                 data.getLocation().getBlock().setType(Material.AIR);
@@ -102,8 +103,8 @@ public class RollBack implements CommandExecutor {
         }
         return true;
     }
-    public void removeFallBlockOnXZColumn(World world, int x, int z) {
-            for (int y = world.getMaxHeight() - 1; y >= 0; y--) {
+    public void removeFallBlockOnXZColumn(World world, int x, int z, int getY) {
+            for (int y = getY; y >= 0; y--) {
                 Location loc = new Location(world, x, y, z);
                 Material blockType = loc.getBlock().getType();
 
