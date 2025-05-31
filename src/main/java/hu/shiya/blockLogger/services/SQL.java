@@ -147,7 +147,7 @@ public class SQL {
         }
     }
     public void handleRollBackAsync(long givenArgumentTime, Data data) {
-        try { //if IsFallable akkor a z-t nem kell nézni
+        try {
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
             } else {
