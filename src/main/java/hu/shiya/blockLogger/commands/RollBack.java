@@ -82,7 +82,8 @@ public class RollBack implements CommandExecutor {
                                 World world = data.getLocation().getWorld();
                                 int x = data.getLocation().getBlockX();
                                 int z = data.getLocation().getBlockZ();
-                                removeSandOnXZColumn(world, x, z);
+                                removeFallBlockOnXZColumn(world, x, z);
+                                itemHandlingAdd(targetPlayer, player, data);
                             } else {
                                 data.getLocation().getBlock().setType(Material.AIR);
                                 itemHandlingAdd(targetPlayer, player, data);
@@ -101,17 +102,17 @@ public class RollBack implements CommandExecutor {
         }
         return true;
     }
-    public void removeSandOnXZColumn(World world, int x, int z) {
-        for (int y = 0; y < world.getMaxHeight(); y++) {
-            Location loc = new Location(world, x, y, z);
-            Material blockType = loc.getBlock().getType();
+    public void removeFallBlockOnXZColumn(World world, int x, int z) {
+            for (int y = world.getMaxHeight() - 1; y >= 0; y--) {
+                Location loc = new Location(world, x, y, z);
+                Material blockType = loc.getBlock().getType();
 
-            if (FallBlockUtility.isFallableBlock(blockType)) {
-                loc.getBlock().setType(Material.AIR);
-                return;
+                if (FallBlockUtility.isFallableBlock(blockType)) {
+                    loc.getBlock().setType(Material.AIR);
+                    return;
+                }
             }
         }
-    }
 
     private void itemHandlingAdd(String targetPlayer, Player player, Data data) {
         if ("SURVIVAL".equals(data.getGameMode())) {
