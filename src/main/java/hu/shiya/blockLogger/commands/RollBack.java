@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class RollBack implements CommandExecutor {
     private final BlockLogger pluginInstance;
@@ -30,6 +31,7 @@ public class RollBack implements CommandExecutor {
         String targetPlayer;
         long getTime;
         long currentTime;
+        List<String> output = new ArrayList<>();
 
         if (!commandSender.hasPermission("rollback-command")) {
             HashMap<String, String> placeholders = new HashMap<>();
@@ -52,7 +54,7 @@ public class RollBack implements CommandExecutor {
                 getTime = Long.parseLong(args[1]);
             } catch (Exception e) {
                 String message = pluginInstance.getConfig().getString("messages.rollback.usage-error");
-                player.sendMessage(message);
+                output.add(message);
                 return true;
             }
 
@@ -68,7 +70,7 @@ public class RollBack implements CommandExecutor {
 
                     if (!playerName.equals(targetPlayer)) {
                         String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
-                        player.sendMessage(message);
+                        output.add(message);
                         return;
                     }
 
@@ -83,6 +85,9 @@ public class RollBack implements CommandExecutor {
                     });
                 }
             });
+            for (String message : output) {
+                player.sendMessage (message);
+            }
             return true;
         }
         return true;

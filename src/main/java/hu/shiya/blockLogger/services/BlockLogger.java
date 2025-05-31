@@ -9,7 +9,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class BlockLogger extends JavaPlugin {
     private final SQL sqlInstance;
     public BlockLogger() {
-        sqlInstance = new SQL( this );
+        sqlInstance = new SQL( this, this.getConfig() );
     }
 
     @Override

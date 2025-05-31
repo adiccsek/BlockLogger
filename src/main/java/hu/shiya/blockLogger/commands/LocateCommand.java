@@ -105,7 +105,6 @@ public class LocateCommand implements CommandExecutor {
                         AtomicInteger taskId = new AtomicInteger();
 
                         taskId.set(Bukkit.getScheduler().scheduleSyncRepeatingTask(pluginInstance, () -> {
-                            System.out.println("DEBUG-insideschedulerepeatingtask");
 
                             if (!hologram.isValid()) {
                                 Bukkit.getScheduler().cancelTask(taskId.get());
@@ -131,7 +130,6 @@ public class LocateCommand implements CommandExecutor {
                 }
             });
         }
-
         return true;
     }
 }

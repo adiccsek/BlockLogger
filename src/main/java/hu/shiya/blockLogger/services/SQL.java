@@ -2,25 +2,30 @@ package hu.shiya.blockLogger.services;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.FileWriter;
+import java.lang.module.Configuration;
 import java.sql.*;
 import java.util.ArrayList;
 
 public class SQL {
     private final BlockLogger blockLogger;
     private Connection connection;
+    private ConfigurationSection config;
 
-    public SQL(final BlockLogger blockLogger) {
+    public SQL(final BlockLogger blockLogger, final ConfigurationSection config) {
         this.blockLogger = blockLogger;
+        this.config = config;
     }
 
     public void handleDatabaseAsync(String host, String password, String user, String database) {
         try {
             String url = "jdbc:mysql://" + host + "/" + database;
             connection = DriverManager.getConnection(url, user, password);
-            blockLogger.getLogger().info("Connected to the database");
+            String message = config.getString("messages.db.connection-true");
+            blockLogger.getLogger().info(message);
 
             if (connection != null && !connection.isClosed()) {
                 // Create logged_blocks
@@ -57,7 +62,8 @@ public class SQL {
                 PreparedStatement statement2 = connection.prepareStatement(sql2);
                 statement2.executeUpdate();
             }
-                blockLogger.getLogger().info("Created the tables");
+                message = config.getString("messages.db.tables-true");
+                blockLogger.getLogger().info(message);
 
         } catch (SQLException e) {
             blockLogger.getLogger().severe(e.getMessage());
@@ -67,13 +73,13 @@ public class SQL {
     public void saveLoggedBlocksAsync(Data data) {
         try {
             if (connection == null || connection.isClosed()) {
-                blockLogger.getLogger().severe("Connection is null or is closed");
+                String message = config.getString("db.connection-false");
+                blockLogger.getLogger().severe(message);
                 return;
             }
             int rowsAffected = 0;
             if (!data.getType().equalsIgnoreCase("place")) {
-//UPDATE logged_blocks SET type = ?, time = ?, world = ?, x = ?, y = ?, z = ?, playername = ? "
-                String updateSql = "DELETE FROM logged_blocks WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ? AND gamemode = ? AND rollblock = ?";
+                String updateSql = "DELETE FROM logged_blocks WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ? AND gamemode = ? AND block = ?";
 
                 PreparedStatement deleteStatement = connection.prepareStatement(updateSql);
                 deleteStatement.setString(1, data.getLocation().getWorld().getName());
@@ -82,20 +88,12 @@ public class SQL {
                 deleteStatement.setInt(4, data.getLocation().getBlockZ());
                 deleteStatement.setString(5, data.getPlayerName());
                 deleteStatement.setString(6, data.getGameMode());
-                deleteStatement.setString(7, data.getRollBlock());
-
-/*
-                updateStatement.setString(8, data.getLocation().getWorld().getName());
-                updateStatement.setInt(9, data.getLocation().getBlockX());
-                updateStatement.setInt(10, data.getLocation().getBlockY());
-                updateStatement.setInt(11, data.getLocation().getBlockZ());
-                updateStatement.setString(12, data.getPlayerName());
-                updateStatement.setString(13, data.getGameMode());
-                updateStatement.setInt(14, data.getRollAmount()); */
-
+                deleteStatement.setString(7, data.getBlock());
 
                 rowsAffected = deleteStatement.executeUpdate();
-                blockLogger.getLogger().info("Updated rows: " + rowsAffected);
+                if (config.getBoolean("debug-messages")) {
+                    blockLogger.getLogger().info("Updated rows: " + rowsAffected);
+                };
             }
 
             if (rowsAffected == 0) {
@@ -111,7 +109,8 @@ public class SQL {
     public ArrayList<Data> rollBackLogicAsync(long checkTime, String playerName) {
         try {
             if (connection == null || connection.isClosed()) {
-                blockLogger.getLogger().severe("Connection is null or is closed");
+                String message = config.getString("db.connection-false");
+                blockLogger.getLogger().severe(message);
                 return null;
             } else {
                 ArrayList<Data> datas = new ArrayList<>();
@@ -132,8 +131,11 @@ public class SQL {
                     data.setGameMode(resultSet.getString("gamemode"));
                     data.setRollBlock(resultSet.getString("rollblock"));
                     data.setRollAmount(resultSet.getInt("rollamount"));
-                    blockLogger.getLogger().info("Retrieved the elements successfully");
-                    blockLogger.getLogger().info(data.toString());
+
+                   if (config.getBoolean("debug-messages")) {
+                       blockLogger.getLogger().info("Retrieved the elements successfully");
+                       blockLogger.getLogger().info(data.toString());
+                   }
                     datas.add(data);
                 }
                 return datas;
@@ -159,7 +161,9 @@ public class SQL {
                 statement.setString(6, data.getPlayerName());
 
                 statement.executeUpdate();
-                blockLogger.getLogger().info("Deleted the elements successfully (logged_blocks)");
+                if (config.getBoolean("debug-messages")) {
+                    blockLogger.getLogger().info("Deleted the elements successfully (logged_blocks)");
+                }
 
                 String sql2 = "INSERT INTO rolled_logged_blocks (type, time, world, x, y, z, playername, block, gamemode, rollblock, rollamount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 insertData(data, sql2);
@@ -169,12 +173,11 @@ public class SQL {
         }
     }
 
-
-
     public ArrayList<Data> locateLogicPlayerAsync(String playerName, Location location, int radius) {
         try {
             if (connection == null || connection.isClosed()) {
-                blockLogger.getLogger().severe("Connection is null or is closed");
+                String message = config.getString("db.connection-false");
+                blockLogger.getLogger().severe(message);
                 return null;
             }
 
@@ -228,7 +231,9 @@ public class SQL {
             data.setGameMode(resultSet.getString("gamemode"));
             data.setRollBlock(resultSet.getString("rollblock"));
             data.setRollAmount(resultSet.getInt("rollamount"));
-            blockLogger.getLogger().info("Retrieved the elements successfully");
+            if (config.getBoolean("debug-messages")) {
+                blockLogger.getLogger().info("Retrieved the elements successfully");
+            }
             datas.add(data);
         }
         return datas;
@@ -249,7 +254,9 @@ public class SQL {
         insertStatement.setInt(11, data.getRollAmount());
 
         insertStatement.executeUpdate();
-        blockLogger.getLogger().info("Inserted new block log entry.");
+        if (config.getBoolean("debug-messages")) {
+            blockLogger.getLogger().info("Inserted the elements successfully");
+        }
     }
 
     public void writeLoggedBlocksAsync(String fileRoute) {
@@ -274,7 +281,9 @@ public class SQL {
                 writer.write( data.getType() + ";" + data.getPlayerName() + ";" + data.getBlock() + ";" +
                         data.getLocation() + ";" + data.getTime() + ";" + data.getGameMode() + ";" + data.getRollBlock() + data.getRollAmount() + "\n");
             }
-            blockLogger.getLogger().info("Written the elements successfully (fileWriter)");
+            if (config.getBoolean("debug-messages")) {
+                blockLogger.getLogger().info("Written the elements successfully");
+            }
         } catch (Exception e) {
             blockLogger.getLogger().severe(e.getMessage());
         }
@@ -283,7 +292,8 @@ public class SQL {
     public void disableDatabaseAsync() {
         try {
             if (connection == null || connection.isClosed()) {
-                blockLogger.getLogger().severe("Connection is null or is closed");
+                String message = config.getString("db.connection-false");
+                blockLogger.getLogger().severe(message);
             } else {
                 connection.close();
                 blockLogger.getLogger().info("Disabling the database");
