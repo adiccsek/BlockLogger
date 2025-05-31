@@ -14,6 +14,7 @@ commands:
   write:
     description: Write the rolled back blocks into a txt file to the provided route.
     usage: /write
+    default: op
 permissions:
   locate-command:
     description: Allows the player to use the /locate <amount> <player> command

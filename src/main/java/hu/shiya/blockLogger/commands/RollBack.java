@@ -98,21 +98,43 @@ public class RollBack implements CommandExecutor {
             player.sendMessage("You have added " + data.getBlock() + " to the inventory of: " + targetPlayer);
         }
     }
-        private void itemHandlingTake(String targetPlayer, Player player, Data data) {
-            if ("SURVIVAL".equals(data.getGameMode())) {
-                Player target = Bukkit.getPlayer(targetPlayer);
-                Inventory inventory = target.getInventory();
-                ItemStack item = new ItemStack(Material.valueOf(data.getBlock()));
+    private void itemHandlingTake(String targetPlayer, Player player, Data data) {
+        if ("SURVIVAL".equals(data.getGameMode())) {
+            Player target = Bukkit.getPlayer(targetPlayer);
+            if (target == null) {
+                player.sendMessage("Target player not found.");
+                return;
+            }
 
-                for (int i = 0; i < inventory.getSize(); i++) {
-                    ItemStack currentItem = inventory.getItem(i);
+            Inventory inventory = target.getInventory();
+            Material material = Material.valueOf(data.getRollBlock());
+            int amountToTake = data.getRollAmount();
+            int remaining = amountToTake;
 
-                    if (currentItem != null && currentItem.equals(item)) {
+            for (int i = 0; i < inventory.getSize(); i++) {
+                ItemStack currentItem = inventory.getItem(i);
+
+                if (currentItem != null && currentItem.getType() == material) {
+                    int stackAmount = currentItem.getAmount();
+
+                    if (stackAmount <= remaining) {
                         inventory.setItem(i, null);
+                        remaining -= stackAmount;
+                    } else {
+                        currentItem.setAmount(stackAmount - remaining);
+                        remaining = 0;
                         break;
                     }
+
+                    if (remaining <= 0) break;
                 }
-                player.sendMessage("You have added " + data.getBlock() + " to the inventory of: " + targetPlayer);
             }
+
+            if (remaining > 0) {
+                player.sendMessage("Only partially removed " + (amountToTake - remaining) + "x " + material + ".");
+            } else {
+                player.sendMessage("You have taken " + amountToTake + "x " + material + " from " + targetPlayer + ".");
+            }
+        }
     }
 }

@@ -34,7 +34,9 @@ public class SQL {
                         "y DOUBLE," +
                         "z DOUBLE," +
                         "time BIGINT," +
-                        "gamemode VARCHAR(50))";
+                        "gamemode VARCHAR(50)," +
+                        "rollblock VARCHAR(100)," +
+                        "rollamount INT)";
                 PreparedStatement statement1 = connection.prepareStatement(sql1);
                 statement1.executeUpdate();
 
@@ -49,7 +51,9 @@ public class SQL {
                         "y DOUBLE," +
                         "z DOUBLE," +
                         "time BIGINT ," +
-                        "gamemode VARCHAR(50))";
+                        "gamemode VARCHAR(50)," +
+                        "rollblock VARCHAR(100)," +
+                        "rollamount INT)";
                 PreparedStatement statement2 = connection.prepareStatement(sql2);
                 statement2.executeUpdate();
             }
@@ -68,33 +72,34 @@ public class SQL {
             }
             int rowsAffected = 0;
             if (!data.getType().equalsIgnoreCase("place")) {
+//UPDATE logged_blocks SET type = ?, time = ?, world = ?, x = ?, y = ?, z = ?, playername = ? "
+                String updateSql = "DELETE FROM logged_blocks WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ? AND gamemode = ? AND rollblock = ?";
 
-                String updateSql = "UPDATE logged_blocks SET type = ?, time = ?, world = ?, x = ?, y = ?, z = ?, playername = ? " +
-                        "WHERE world = ? AND x = ? AND y = ? AND z = ? AND playername = ? AND gamemode = ?";
+                PreparedStatement deleteStatement = connection.prepareStatement(updateSql);
+                deleteStatement.setString(1, data.getLocation().getWorld().getName());
+                deleteStatement.setInt(2, data.getLocation().getBlockX());
+                deleteStatement.setInt(3, data.getLocation().getBlockY());
+                deleteStatement.setInt(4, data.getLocation().getBlockZ());
+                deleteStatement.setString(5, data.getPlayerName());
+                deleteStatement.setString(6, data.getGameMode());
+                deleteStatement.setString(7, data.getRollBlock());
 
-                PreparedStatement updateStatement = connection.prepareStatement(updateSql);
-                updateStatement.setString(1, data.getType());
-                updateStatement.setLong(2, data.getTime());
-                updateStatement.setString(3, data.getLocation().getWorld().getName());
-                updateStatement.setInt(4, data.getLocation().getBlockX());
-                updateStatement.setInt(5, data.getLocation().getBlockY());
-                updateStatement.setInt(6, data.getLocation().getBlockZ());
-                updateStatement.setString(7, data.getPlayerName());
-
+/*
                 updateStatement.setString(8, data.getLocation().getWorld().getName());
                 updateStatement.setInt(9, data.getLocation().getBlockX());
                 updateStatement.setInt(10, data.getLocation().getBlockY());
                 updateStatement.setInt(11, data.getLocation().getBlockZ());
                 updateStatement.setString(12, data.getPlayerName());
-                updateStatement.setString(13, data.getLocation().getWorld().getName());
+                updateStatement.setString(13, data.getGameMode());
+                updateStatement.setInt(14, data.getRollAmount()); */
 
 
-                rowsAffected = updateStatement.executeUpdate();
+                rowsAffected = deleteStatement.executeUpdate();
                 blockLogger.getLogger().info("Updated rows: " + rowsAffected);
             }
 
             if (rowsAffected == 0) {
-                String insertSql = "INSERT INTO logged_blocks (type, time, world, x, y, z, playername, block, gamemode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String insertSql = "INSERT INTO logged_blocks (type, time, world, x, y, z, playername, block, gamemode, rollblock, rollamount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 insertData(data, insertSql);
             }
 
@@ -125,6 +130,8 @@ public class SQL {
                     data.setLocation(location);
                     data.setTime(resultSet.getLong("time"));
                     data.setGameMode(resultSet.getString("gamemode"));
+                    data.setRollBlock(resultSet.getString("rollblock"));
+                    data.setRollAmount(resultSet.getInt("rollamount"));
                     blockLogger.getLogger().info("Retrieved the elements successfully");
                     blockLogger.getLogger().info(data.toString());
                     datas.add(data);
@@ -154,7 +161,7 @@ public class SQL {
                 statement.executeUpdate();
                 blockLogger.getLogger().info("Deleted the elements successfully (logged_blocks)");
 
-                String sql2 = "INSERT INTO rolled_logged_blocks (type, time, world, x, y, z, playername, block, gamemode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                String sql2 = "INSERT INTO rolled_logged_blocks (type, time, world, x, y, z, playername, block, gamemode, rollblock, rollamount) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 insertData(data, sql2);
             }
         } catch ( Exception e ) {
@@ -219,6 +226,8 @@ public class SQL {
             data.setLocation(location2);
             data.setTime(resultSet.getLong("time"));
             data.setGameMode(resultSet.getString("gamemode"));
+            data.setRollBlock(resultSet.getString("rollblock"));
+            data.setRollAmount(resultSet.getInt("rollamount"));
             blockLogger.getLogger().info("Retrieved the elements successfully");
             datas.add(data);
         }
@@ -236,6 +245,8 @@ public class SQL {
         insertStatement.setString(7, data.getPlayerName());
         insertStatement.setString(8, data.getBlock());
         insertStatement.setString(9, data.getGameMode());
+        insertStatement.setString(10, data.getRollBlock());
+        insertStatement.setInt(11, data.getRollAmount());
 
         insertStatement.executeUpdate();
         blockLogger.getLogger().info("Inserted new block log entry.");
@@ -257,9 +268,11 @@ public class SQL {
                 data.setLocation(location);
                 data.setTime(resultSet.getLong("time"));
                 data.setGameMode(resultSet.getString("gamemode"));
+                data.setRollBlock(resultSet.getString("rollblock"));
+                data.setRollAmount(resultSet.getInt("rollamount"));
 
                 writer.write( data.getType() + ";" + data.getPlayerName() + ";" + data.getBlock() + ";" +
-                        data.getLocation() + ";" + data.getTime() + ";" + data.getGameMode() + ";" + "\n");
+                        data.getLocation() + ";" + data.getTime() + ";" + data.getGameMode() + ";" + data.getRollBlock() + data.getRollAmount() + "\n");
             }
             blockLogger.getLogger().info("Written the elements successfully (fileWriter)");
         } catch (Exception e) {
