@@ -4,15 +4,19 @@ import hu.shiya.blockLogger.services.BlockLogger;
 import hu.shiya.blockLogger.services.Data;
 import hu.shiya.blockLogger.services.Placeholder;
 import hu.shiya.blockLogger.services.SQL;
+import hu.shiya.blockLogger.utils.FallBlockUtility;
 import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class RollBack implements CommandExecutor {
     private final BlockLogger pluginInstance;
@@ -28,6 +32,7 @@ public class RollBack implements CommandExecutor {
         String targetPlayer;
         long getTime;
         long currentTime;
+        List<String> output = new ArrayList<>();
 
         if (!commandSender.hasPermission("rollback-command")) {
             HashMap<String, String> placeholders = new HashMap<>();
@@ -50,7 +55,7 @@ public class RollBack implements CommandExecutor {
                 getTime = Long.parseLong(args[1]);
             } catch (Exception e) {
                 String message = pluginInstance.getConfig().getString("messages.rollback.usage-error");
-                player.sendMessage(message);
+                output.add(message);
                 return true;
             }
 
@@ -62,24 +67,100 @@ public class RollBack implements CommandExecutor {
 
                 for (Data data : loopDatas) {
                     String playerName = data.getPlayerName();
+                    sqlInstance.handleRollBackAsync(checkTime, data);
 
                     if (!playerName.equals(targetPlayer)) {
                         String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
-                        player.sendMessage(message);
+                        output.add(message);
                         return;
                     }
 
                     Bukkit.getScheduler().runTask(pluginInstance, () -> {
-                        if ("break".equals(data.getType())) {
-                            data.getLocation().getBlock().setType(Material.valueOf(data.getBlock()));
+                        if (!"break".equals(data.getType())) {
+                            Material material = Material.getMaterial(data.getBlock());
+                            if (FallBlockUtility.isFallableBlock(material)) {
+                                World world = data.getLocation().getWorld();
+                                int x = data.getLocation().getBlockX();
+                                int z = data.getLocation().getBlockZ();
+                                removeFallBlockOnXZColumn(world, x, z);
+                                itemHandlingAdd(targetPlayer, player, data);
+                            } else {
+                                data.getLocation().getBlock().setType(Material.AIR);
+                                itemHandlingAdd(targetPlayer, player, data);
+                            }
                         } else {
-                            data.getLocation().getBlock().setType(Material.AIR);
+                            data.getLocation().getBlock().setType(Material.valueOf(data.getBlock()));
+                            itemHandlingTake(targetPlayer, player, data);
                         }
                     });
                 }
             });
+            for (String message : output) {
+                player.sendMessage (message);
+            }
             return true;
         }
         return true;
+    }
+    public void removeFallBlockOnXZColumn(World world, int x, int z) {
+            for (int y = world.getMaxHeight() - 1; y >= 0; y--) {
+                Location loc = new Location(world, x, y, z);
+                Material blockType = loc.getBlock().getType();
+
+                if (FallBlockUtility.isFallableBlock(blockType)) {
+                    loc.getBlock().setType(Material.AIR);
+                    return;
+                }
+            }
+        }
+
+    private void itemHandlingAdd(String targetPlayer, Player player, Data data) {
+        if ("SURVIVAL".equals(data.getGameMode())) {
+            Player target = Bukkit.getPlayer(targetPlayer);
+            Inventory inventory = target.getInventory();
+            ItemStack item = new ItemStack(Material.valueOf(data.getBlock()));
+
+            inventory.addItem(item);
+            player.sendMessage("You have added " + data.getBlock() + " to the inventory of: " + targetPlayer);
+        }
+    }
+    private void itemHandlingTake(String targetPlayer, Player player, Data data) {
+        if ("SURVIVAL".equals(data.getGameMode())) {
+            Player target = Bukkit.getPlayer(targetPlayer);
+            if (target == null) {
+                player.sendMessage("Target player not found.");
+                return;
+            }
+
+            Inventory inventory = target.getInventory();
+            Material material = Material.valueOf(data.getRollBlock());
+            int amountToTake = data.getRollAmount();
+            int remaining = amountToTake;
+
+            for (int i = 0; i < inventory.getSize(); i++) {
+                ItemStack currentItem = inventory.getItem(i);
+
+                if (currentItem != null && currentItem.getType() == material) {
+                    int stackAmount = currentItem.getAmount();
+
+                    if (stackAmount <= remaining) {
+                        inventory.setItem(i, null);
+                        remaining -= stackAmount;
+                    } else {
+                        currentItem.setAmount(stackAmount - remaining);
+                        remaining = 0;
+                        break;
+                    }
+
+                    if (remaining <= 0) break;
+                }
+            }
+
+            if (remaining > 0) {
+                player.sendMessage("Only partially removed " + (amountToTake - remaining) + "x " + material + ".");
+            } else {
+                player.sendMessage("You have taken " + amountToTake + "x " + material + " from " + targetPlayer + ".");
+            }
+        }
     }
 }

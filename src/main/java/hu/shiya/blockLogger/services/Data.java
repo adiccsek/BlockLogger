@@ -11,12 +11,18 @@ public class Data {
     private String block;
     private Location location;
     private long time;
-    public Data(String playerName, String block, Location location, long time, String type) {
+    private String gameMode;
+    private String rollBlock;
+    private int rollAmount;
+    public Data(String playerName, String block, Location location, long time, String type, String gameMode, String rollBlock, int rollAmount) {
         this.playerName = playerName;
         this.block = block;
         this.location = location;
         this.time = time;
         this.type = type;
+        this.gameMode = gameMode;
+        this.rollBlock = rollBlock;
+        this.rollAmount = rollAmount;
     }
     public Data( ) { }
 
@@ -35,6 +41,9 @@ public class Data {
     public String getType() {
         return type;
     }
+    public String getGameMode() { return gameMode; }
+    public String getRollBlock() { return rollBlock; }
+    public int getRollAmount() { return rollAmount; }
 
     public void setType( String type ) {
         this.type = type;
@@ -51,4 +60,7 @@ public class Data {
     public void setTime( long time ) {
         this.time = time;
     }
+    public void setGameMode( String gameMode ) { this.gameMode = gameMode; }
+    public void setRollBlock( String rollBlock ) { this.rollBlock = rollBlock; }
+    public void setRollAmount( int rollAmount ) { this.rollAmount = rollAmount; }
 }

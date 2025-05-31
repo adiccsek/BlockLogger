@@ -1,7 +1,9 @@
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\commands\LocateCommand.java
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\commands\RollBack.java
+D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\commands\WriteToFileCommand.java
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\listeners\BlockListeners.java
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\services\BlockLogger.java
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\services\Data.java
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\services\Placeholder.java
 D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\services\SQL.java
+D:\IntelliJIdea\Projects\BlockLogger\src\main\java\hu\shiya\blockLogger\utils\FallBlockUtility.java
