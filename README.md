@@ -3,8 +3,8 @@
 
 # BlockLogger :bar_chart: :world_map:
 
-[![GitHub license](https://img.shields.io/github/license/adiccsek/BlockLogger)](https://github.com/adiccsek/BlockLogger)
-![GitHub release](https://img.shields.io/github/v/release/adiccsek/BlockLogger/)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/adiccsek/BlockLogger)
+![GitHub downloads](https://img.shields.io/github/downloads/adiccsek/BlockLogger/total)
 ![Paper Version](https://img.shields.io/badge/Paper-1.19%2B-blueviolet)
 
 Advanced block activity tracking and management system for PaperMC servers (1.19+)
