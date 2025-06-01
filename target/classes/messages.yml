@@ -4,14 +4,14 @@ messages:
     arguments-error: "Please use the correct number of arguments."
     usage-error: "The correct usage is: /rollback <name> <time>."
     name-error: "The name does not match!"
-    give-item-correct: "You have added %block% to the inventory of: %player%".
+    give-item-correct: "You have added %block% to the inventory of: %player%."
     take-partially-correct: "Only Partially removed %amount% + %material%."
     take-correct: "You have taken %amount% %material% from %player%."
   locate:
     no-permission-error: "You do not have permission to use /locate %player%."
     arguments-error: "Please use the correct number of arguments."
     data-error: "No log data was found."
-    locate-correct: "%player% %type% %block% at (%x%, %y%, %z%)"
+    locate-correct-hologram: "%player% %type% %block% at (%x%, %y%, %z%)"
     radius-error: "Radius must be a number."
   db:
     connection-true: "Connected to the database!" #When the database connects successfully (console)

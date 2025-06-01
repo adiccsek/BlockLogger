@@ -1,8 +1,8 @@
 database:
   host: "host"
   username: "username"
-  password: "db"
-  databaseName: "database"
+  password: "password"
+  databaseName: "db"
 
 debug-messages: false
 

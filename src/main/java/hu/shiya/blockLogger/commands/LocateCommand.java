@@ -75,7 +75,7 @@ public class LocateCommand implements CommandExecutor {
 
                 for (Data data : loopDatas) {
                     HashMap<String, String> placeholders = new HashMap<>();
-                    String rawMessage = blockLogger.getMessageManager().get( "messages.db.connection-false" );;
+                    String rawMessage = blockLogger.getMessageManager().get( "messages.locate.locate-correct-hologram" );;
 
                     placeholders.put("player", data.getPlayerName());
                     placeholders.put("type", data.getType());
