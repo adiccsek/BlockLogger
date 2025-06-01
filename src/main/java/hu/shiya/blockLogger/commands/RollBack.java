@@ -12,6 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -19,11 +20,11 @@ import java.util.HashMap;
 import java.util.List;
 
 public class RollBack implements CommandExecutor {
-    private final BlockLogger pluginInstance;
+    private final BlockLogger blockLogger;
     private final SQL sqlInstance;
 
-    public RollBack(final BlockLogger pluginInstance, final SQL sqlInstance) {
-        this.pluginInstance = pluginInstance;
+    public RollBack(final BlockLogger blockLogger, final SQL sqlInstance) {
+        this.blockLogger = blockLogger;
         this.sqlInstance = sqlInstance;
     }
 
@@ -38,14 +39,14 @@ public class RollBack implements CommandExecutor {
             HashMap<String, String> placeholders = new HashMap<>();
             placeholders.put("player", commandSender.getName());
 
-            String rawMessage = pluginInstance.getConfig().getString("messages.rollback.no-permission-error");
-            commandSender.sendMessage(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
+            String rawMessage = blockLogger.getMessageManager().get( "messages.rollback.no-permission-error" );
+            commandSender.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
             return true;
         }
 
         if (args.length != 2) {
-            String message = pluginInstance.getConfig().getString("messages.rollback.arguments-error");
-            commandSender.sendMessage(message);
+            String message = blockLogger.getMessageManager().get( "messages.rollback.arguments-error" );
+            commandSender.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + message);
             return true;
         }
 
@@ -54,15 +55,15 @@ public class RollBack implements CommandExecutor {
                 targetPlayer = args[0];
                 getTime = Long.parseLong(args[1]);
             } catch (Exception e) {
-                String message = pluginInstance.getConfig().getString("messages.rollback.usage-error");
-                output.add(message);
+                String message = blockLogger.getMessageManager().get("messages.rollback.usage-error" );
+                output.add(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED +  message);
                 return true;
             }
 
             currentTime = System.currentTimeMillis() / 60000;
             long checkTime = currentTime - getTime;
 
-            Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> {
+            Bukkit.getScheduler().runTaskAsynchronously(blockLogger, () -> {
                 ArrayList<Data> loopDatas = sqlInstance.rollBackLogicAsync(checkTime, targetPlayer);
 
                 for (Data data : loopDatas) {
@@ -70,19 +71,20 @@ public class RollBack implements CommandExecutor {
                     sqlInstance.handleRollBackAsync(checkTime, data);
 
                     if (!playerName.equals(targetPlayer)) {
-                        String message = pluginInstance.getConfig().getString("messages.rollback.name-error");
-                        output.add(message);
+                        String message = blockLogger.getMessageManager().get(  "messages.rollback.name-error" );;
+                        output.add(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + message);
                         return;
                     }
 
-                    Bukkit.getScheduler().runTask(pluginInstance, () -> {
+                    Bukkit.getScheduler().runTask(blockLogger, () -> {
                         if (!"break".equals(data.getType())) {
                             Material material = Material.getMaterial(data.getBlock());
                             if (FallBlockUtility.isFallableBlock(material)) {
                                 World world = data.getLocation().getWorld();
                                 int x = data.getLocation().getBlockX();
                                 int z = data.getLocation().getBlockZ();
-                                removeFallBlockOnXZColumn(world, x, z);
+                                int y = data.getLocation().getBlockY();
+                                removeFallBlockOnXZColumn(world, x, z, y);
                                 itemHandlingAdd(targetPlayer, player, data);
                             } else {
                                 data.getLocation().getBlock().setType(Material.AIR);
@@ -102,8 +104,8 @@ public class RollBack implements CommandExecutor {
         }
         return true;
     }
-    public void removeFallBlockOnXZColumn(World world, int x, int z) {
-            for (int y = world.getMaxHeight() - 1; y >= 0; y--) {
+    public void removeFallBlockOnXZColumn(World world, int x, int z, int getY) {
+            for (int y = getY; y >= 0; y--) {
                 Location loc = new Location(world, x, y, z);
                 Material blockType = loc.getBlock().getType();
 
@@ -121,7 +123,12 @@ public class RollBack implements CommandExecutor {
             ItemStack item = new ItemStack(Material.valueOf(data.getBlock()));
 
             inventory.addItem(item);
-            player.sendMessage("You have added " + data.getBlock() + " to the inventory of: " + targetPlayer);
+            HashMap<String, String> placeholders = new HashMap<>();
+            placeholders.put("block", data.getBlock());
+            placeholders.put("player", player.getName());
+
+            String rawMessage = blockLogger.getMessageManager().get( "messages.rollback.no-permission-error" );
+            player.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
         }
     }
     private void itemHandlingTake(String targetPlayer, Player player, Data data) {
@@ -157,9 +164,20 @@ public class RollBack implements CommandExecutor {
             }
 
             if (remaining > 0) {
-                player.sendMessage("Only partially removed " + (amountToTake - remaining) + "x " + material + ".");
+                HashMap<String, String> placeholders = new HashMap<>();
+                placeholders.put("material", data.getBlock());
+                placeholders.put("amount", String.valueOf(amountToTake - remaining));
+                String rawMessage = blockLogger.getMessageManager().get( "messages.rollback.take-partially-correct" );
+
+                player.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
             } else {
-                player.sendMessage("You have taken " + amountToTake + "x " + material + " from " + targetPlayer + ".");
+                HashMap<String, String> placeholders = new HashMap<>();
+                placeholders.put("material", data.getBlock());
+                placeholders.put("amount", String.valueOf(amountToTake));
+                placeholders.put("player", targetPlayer);
+                String rawMessage = blockLogger.getMessageManager().get( "messages.rollback.take-correct" );
+
+                player.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
             }
         }
     }

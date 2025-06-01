@@ -24,6 +24,9 @@ public class WriteToFileCommand implements CommandExecutor {
             try {
                 Bukkit.getScheduler().runTaskAsynchronously(blockLogger, () -> {
                     sqlInstance.writeLoggedBlocksAsync("statistics.txt");
+                    Bukkit.getScheduler().runTask(blockLogger, () -> {
+                       blockLogger.getMessageManager().get("messages.write.write-true");
+                    });
                 });
             } catch (Exception e) {
                 blockLogger.getLogger().severe( e.getMessage() );

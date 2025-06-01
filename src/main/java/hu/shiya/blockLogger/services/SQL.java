@@ -24,7 +24,7 @@ public class SQL {
         try {
             String url = "jdbc:mysql://" + host + "/" + database;
             connection = DriverManager.getConnection(url, user, password);
-            String message = config.getString("messages.db.connection-true");
+            String message = blockLogger.getMessageManager().get( "messages.db.connection-true" );
             blockLogger.getLogger().info(message);
 
             if (connection != null && !connection.isClosed()) {
@@ -62,7 +62,7 @@ public class SQL {
                 PreparedStatement statement2 = connection.prepareStatement(sql2);
                 statement2.executeUpdate();
             }
-                message = config.getString("messages.db.tables-true");
+                message = blockLogger.getMessageManager().get( "messages.db.tables-true" );
                 blockLogger.getLogger().info(message);
 
         } catch (SQLException e) {
@@ -73,7 +73,7 @@ public class SQL {
     public void saveLoggedBlocksAsync(Data data) {
         try {
             if (connection == null || connection.isClosed()) {
-                String message = config.getString("db.connection-false");
+                String message = blockLogger.getMessageManager().get( "messages.db.connection-false" );
                 blockLogger.getLogger().severe(message);
                 return;
             }
@@ -109,7 +109,7 @@ public class SQL {
     public ArrayList<Data> rollBackLogicAsync(long checkTime, String playerName) {
         try {
             if (connection == null || connection.isClosed()) {
-                String message = config.getString("db.connection-false");
+                String message = blockLogger.getMessageManager().get( "messages.db.connection-false" );;
                 blockLogger.getLogger().severe(message);
                 return null;
             } else {
@@ -147,7 +147,7 @@ public class SQL {
         }
     }
     public void handleRollBackAsync(long givenArgumentTime, Data data) {
-        try { //if IsFallable akkor a z-t nem kell nézni
+        try {
             if (connection == null || connection.isClosed()) {
                 blockLogger.getLogger().severe("Connection is null or is closed");
             } else {
@@ -176,7 +176,7 @@ public class SQL {
     public ArrayList<Data> locateLogicPlayerAsync(String playerName, Location location, int radius) {
         try {
             if (connection == null || connection.isClosed()) {
-                String message = config.getString("db.connection-false");
+                String message = blockLogger.getMessageManager().get( "messages.db.connection-false" );
                 blockLogger.getLogger().severe(message);
                 return null;
             }
@@ -186,7 +186,7 @@ public class SQL {
                 double minY = location.getY() - radius;
                 double maxY = location.getY() + radius;
                 double minZ = location.getZ() - radius;
-                double maxZ = location.getZ() + radius;
+                double maxZ = location.getZ() + radius;blockLogger.getMessageManager().get( "messages.db.connection-false" );
 
              if (playerName != null) {
                 String sql = "SELECT * FROM logged_blocks WHERE playername = ? AND x >= ? AND x <= ? AND y >= ? AND y <= ? AND z >= ? AND z <= ?";
@@ -293,7 +293,7 @@ public class SQL {
     public void disableDatabaseAsync() {
         try {
             if (connection == null || connection.isClosed()) {
-                String message = config.getString("db.connection-false");
+                String message = blockLogger.getMessageManager().get( "messages.db.connection-false" );;
                 blockLogger.getLogger().severe(message);
             } else {
                 connection.close();

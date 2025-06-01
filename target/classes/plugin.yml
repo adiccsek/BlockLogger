@@ -3,14 +3,16 @@ version: '1.0-SNAPSHOT'
 main: hu.shiya.blockLogger.services.BlockLogger
 api-version: '1.21'
 authors: [ Shiya ]
-description: A Plugin that welcomes a newly joined player
+description: A Plugin that logs block changes and allows rollback of player actions.
 commands:
   rollback:
     description: Rollback a player's block actions.
     usage: /rollback <name> <minutes>
+    aliases: [ rb ]
   locate:
     description: Locate block events in a specific radius
     usage: /locate <amount>
+    
   write:
     description: Write the rolled back blocks into a txt file to the provided route.
     usage: /write

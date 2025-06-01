@@ -19,15 +19,6 @@ import java.util.Collection;
 
 
 public class BlockListeners implements Listener {
-    String type;
-    String player;
-    String block;
-    Location location;
-    long time;
-    String gameMode;
-    String droppedItemType;
-    int amount;
-
     private final BlockLogger pluginInstance;
     private final SQL sqlInstance;
     public BlockListeners( final BlockLogger pluginInstance , final SQL sqlInstance ) {
@@ -64,7 +55,6 @@ public class BlockListeners implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        System.out.println("DEBUG " + event.getBlock().getType());
 
         String playerName = event.getPlayer().getName();
         String blockType = event.getBlock().getType().toString();
@@ -79,6 +69,7 @@ public class BlockListeners implements Listener {
         Collection<ItemStack> drops = block.getDrops(tool);
         String dropType = "";
         int dropAmount = 0;
+
 
         for (ItemStack drop : drops) {
             dropType = drop.getType().toString();
