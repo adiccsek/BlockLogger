@@ -22,21 +22,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class LocateCommand implements CommandExecutor {
 
-    private final BlockLogger pluginInstance;
+    private final BlockLogger blockLogger;
     private final SQL sqlInstance;
 
     public LocateCommand(final BlockLogger plugin, final SQL sqlInstance) {
-        this.pluginInstance = plugin;
+        this.blockLogger = plugin;
         this.sqlInstance = sqlInstance;
-    }
-
-    private boolean isInteger(String s) {
-        try {
-            Integer.parseInt(s);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
     }
 
     @Override
@@ -48,24 +39,24 @@ public class LocateCommand implements CommandExecutor {
             HashMap<String, String> placeholders = new HashMap<>();
             placeholders.put("player", commandSender.getName());
 
-            String rawMessage = pluginInstance.getConfig().getString("messages.locate.no-permission-error");
-            commandSender.sendMessage(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
+            String rawMessage = blockLogger.getMessageManager().get( "messages.locate.no-permission-error" );
+            commandSender.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
             return true;
         }
 
         if (args.length > 2 || args.length == 0) {
-            String message = pluginInstance.getConfig().getString("messages.locate.arguments-error");
+            String message = blockLogger.getMessageManager().get( "messages.locate.arguments-error" );
             if (message == null) {
                 message = ChatColor.RED + "Usage: /locate <radius> [player]";
             }
-            commandSender.sendMessage(message);
+            commandSender.sendMessage( blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + message);
             return true;
         }
 
         if (commandSender instanceof Player player) {
             Location currentLocation = player.getLocation();
 
-            Bukkit.getScheduler().runTaskAsynchronously(pluginInstance, () -> {
+            Bukkit.getScheduler().runTaskAsynchronously(blockLogger, () -> {
                 int radius;
                 String playerName = null;
 
@@ -75,7 +66,8 @@ public class LocateCommand implements CommandExecutor {
                         playerName = args[1];
                     }
                 } catch (NumberFormatException e) {
-                    player.sendMessage(ChatColor.RED + "Radius must be a number");
+                    String message = blockLogger.getMessageManager().get( "messages.locate.radius-error" );
+                    player.sendMessage(blockLogger.getPrefixUtil().getPrefix() + " " +  ChatColor.RED + message);
                     return;
                 }
 
@@ -83,7 +75,7 @@ public class LocateCommand implements CommandExecutor {
 
                 for (Data data : loopDatas) {
                     HashMap<String, String> placeholders = new HashMap<>();
-                    String rawMessage = pluginInstance.getConfig().getString("messages.locate.locate-correct");
+                    String rawMessage = blockLogger.getMessageManager().get( "messages.db.connection-false" );;
 
                     placeholders.put("player", data.getPlayerName());
                     placeholders.put("type", data.getType());
@@ -92,7 +84,7 @@ public class LocateCommand implements CommandExecutor {
                     placeholders.put("y", String.valueOf(data.getLocation().getBlockY()));
                     placeholders.put("z", String.valueOf(data.getLocation().getBlockZ()));
 
-                    Bukkit.getScheduler().runTask(pluginInstance, () -> {
+                    Bukkit.getScheduler().runTask(blockLogger, () -> {
                         TextDisplay hologram = data.getLocation().getWorld().spawn(data.getLocation(), TextDisplay.class);
 
                         hologram.setText(ChatColor.RED + Placeholder.placeholder(rawMessage, placeholders));
@@ -104,7 +96,7 @@ public class LocateCommand implements CommandExecutor {
 
                         AtomicInteger taskId = new AtomicInteger();
 
-                        taskId.set(Bukkit.getScheduler().scheduleSyncRepeatingTask(pluginInstance, () -> {
+                        taskId.set(Bukkit.getScheduler().scheduleSyncRepeatingTask(blockLogger, () -> {
 
                             if (!hologram.isValid()) {
                                 Bukkit.getScheduler().cancelTask(taskId.get());
@@ -120,12 +112,12 @@ public class LocateCommand implements CommandExecutor {
 
                         }, 0L, 1L));
 
-                        Bukkit.getScheduler().runTaskLater(pluginInstance, () -> {
+                        Bukkit.getScheduler().runTaskLater(blockLogger, () -> {
                             if (hologram.isValid()) hologram.remove();
                             Bukkit.getScheduler().cancelTask(taskId.get());
                         }, 6 * 20L);
 
-                        output.add(Placeholder.placeholder(rawMessage, placeholders));
+                        output.add(Placeholder.placeholder( blockLogger.getPrefixUtil().getPrefix() + " " + ChatColor.RED + rawMessage, placeholders));
                     });
                 }
             });
