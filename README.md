@@ -44,16 +44,29 @@ database:
   password: "" # Change this!
   databaseName: "logger" # Change this!
 
+debug-messages: false # Enable for troubleshooting
+```
+```yaml
+# messages.yml (auto-generated)
 messages:
   rollback:
-    no-permission-error: "&cYou lack permission for /rollback"
-    arguments-error: "&cUsage: /rollback <name> <minutes>"
-    name-error: "&cPlayer not found!"
-  
+    no-permission-error: "You do not have permission to use /rollback %player%."
+    arguments-error: "Please use the correct number of arguments."
+    usage-error: "The correct usage is: /rollback <name> <time>."
+    name-error: "The name does not match!"
+    give-item-correct: "You have added %block% to the inventory of: %player%".
+    take-partially-correct: "Only Partially removed %amount% + %material%."
+    take-correct: "You have taken %amount% %material% from %player%."
   locate:
-    no-permission-error: "&cYou cannot use /locate"
-    arguments-error: "&cUsage: /locate <radius> [player]"
-    data-error: "&cNo logs found in area"
-    locate-correct: "&7%player% &f%type% &a%block% &eat &7(%x%, %y%, %z%)"
-
-debug-messages: false # Enable for troubleshooting
+    no-permission-error: "You do not have permission to use /locate %player%."
+    arguments-error: "Please use the correct number of arguments."
+    data-error: "No log data was found."
+    locate-correct: "%player% %type% %block% at (%x%, %y%, %z%)"
+    radius-error: "Radius must be a number."
+  db:
+    connection-true: "Connected to the database!" #When the database connects successfully (console)
+    tables-true: "Created all the tables!" #When the tables are successfully created. (console)
+    connection-false: "Connection is null or closed!" #When the connection does not exists. (console)
+  write:
+    write-true: "You have written the database to a statistics.txt file."
+```
